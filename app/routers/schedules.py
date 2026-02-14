@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from app.database import SessionDep
-from app.models import Schedule, Device, DeviceGroup
+from app.models import Schedule, Device, DeviceGroup, Command
 from app.services.scheduler_service import add_job_to_scheduler, remove_job_from_scheduler
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
@@ -12,15 +12,19 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/", response_class=HTMLResponse)
 async def list_schedules(request: Request, session: Session = SessionDep):
     schedules = session.exec(select(Schedule)).all()
-    # next_run logic: APScheduler job stores next run time. 
-    # But for simplicity, we rely on the cron expression which represents the schedule.
-    # If we want next_run displayed, we'd need to query scheduler.get_job(id).next_run_time
-    # yes do that list backup logs and link to session log view.
     return templates.TemplateResponse("schedules.html", {"request": request, "schedules": schedules})
 
 @router.get("/new", response_class=HTMLResponse)
-async def new_schedule_form(request: Request):
-    return templates.TemplateResponse("schedule_form.html", {"request": request})
+async def new_schedule_form(request: Request, session: Session = SessionDep):
+    devices = session.exec(select(Device)).all()
+    groups = session.exec(select(DeviceGroup)).all()
+    commands = session.exec(select(Command)).all()
+    return templates.TemplateResponse("schedule_form.html", {
+        "request": request, 
+        "devices": devices, 
+        "groups": groups, 
+        "commands": commands
+    })
 
 @router.post("/new", response_class=HTMLResponse)
 async def create_schedule(
@@ -30,13 +34,15 @@ async def create_schedule(
     enabled: bool = Form(True),
     limit_to_device_id: int = Form(None),
     limit_to_group_id: int = Form(None),
+    command_id: int = Form(None),
     session: Session = SessionDep
 ):
     schedule = Schedule(
         name=name, 
         cron_expression=cron_expression,
         limit_to_device_id=limit_to_device_id,
-        limit_to_group_id=limit_to_group_id
+        limit_to_group_id=limit_to_group_id,
+        command_id=command_id
     )
     session.add(schedule)
     session.commit()
@@ -50,7 +56,7 @@ async def create_schedule_logic( # Avoiding /new name conflict if any
     request: Request,
     name: str = Form(...),
     cron_expression: str = Form(...),
-    enabled: bool = Form(False), # If not in form data (unchecked), default False. If checked, 'on' -> True? No casting 'on' to bool is True.
+    enabled: bool = Form(False), 
     session: Session = SessionDep
 ):
     # FastAPI casts "on" to True? Yes.
@@ -69,7 +75,14 @@ async def edit_schedule_form(request: Request, schedule_id: int, session: Sessio
     schedule = session.get(Schedule, schedule_id)
     devices = session.exec(select(Device)).all()
     groups = session.exec(select(DeviceGroup)).all()
-    return templates.TemplateResponse("schedule_form.html", {"request": request, "schedule": schedule, "devices": devices, "groups": groups})
+    commands = session.exec(select(Command)).all()
+    return templates.TemplateResponse("schedule_form.html", {
+        "request": request, 
+        "schedule": schedule, 
+        "devices": devices, 
+        "groups": groups,
+        "commands": commands
+    })
 
 @router.post("/{schedule_id}/update", response_class=HTMLResponse)
 async def update_schedule(
@@ -79,6 +92,7 @@ async def update_schedule(
     cron_expression: str = Form(...),
     limit_to_device_id: int = Form(None),
     limit_to_group_id: int = Form(None),
+    command_id: int = Form(None),
     session: Session = SessionDep
 ):
     schedule = session.get(Schedule, schedule_id)
@@ -86,6 +100,7 @@ async def update_schedule(
     schedule.cron_expression = cron_expression
     schedule.limit_to_device_id = limit_to_device_id
     schedule.limit_to_group_id = limit_to_group_id
+    schedule.command_id = command_id
     session.add(schedule)
     session.commit()
     session.refresh(schedule)

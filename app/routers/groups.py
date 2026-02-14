@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from app.database import SessionDep
-from app.models import DeviceGroup
+from app.models import DeviceGroup, Command
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 templates = Jinja2Templates(directory="app/templates")
@@ -11,7 +11,8 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/", response_class=HTMLResponse)
 async def list_groups(request: Request, session: Session = SessionDep):
     groups = session.exec(select(DeviceGroup)).all()
-    return templates.TemplateResponse("groups.html", {"request": request, "groups": groups})
+    commands = session.exec(select(Command)).all()
+    return templates.TemplateResponse("groups.html", {"request": request, "groups": groups, "commands": commands})
 
 @router.get("/new", response_class=HTMLResponse)
 async def new_group_form(request: Request):

@@ -7,7 +7,7 @@ from app.database import engine
 
 BACKUP_DIR = "backups"
 
-def run_backup(device_id: int, log_id: int | None = None):
+def run_backup(device_id: int, log_id: int | None = None, command_id: int | None = None):
     with Session(engine) as session:
         device = session.get(Device, device_id)
         # If we have a log_id, fetch it to update later. 
@@ -31,9 +31,17 @@ def run_backup(device_id: int, log_id: int | None = None):
         credential = device.credential
         
         # Get commands for this platform
-        commands = session.exec(select(Command).where(Command.platform == device.device_type)).all()
+        if command_id:
+            command = session.get(Command, command_id)
+            if command and command.platform == device.device_type:
+                commands = [command]
+            else:
+                commands = [] # Command mismatch or not found
+        else:
+            commands = session.exec(select(Command).where(Command.platform == device.device_type)).all()
+
         if not commands:
-             return {"status": "error", "message": f"No commands found for platform {device.device_type}"}
+             return {"status": "error", "message": f"No commands found for platform {device.device_type} (or specific command mismatch)"}
 
         device_params = {
             "device_type": device.device_type,
@@ -170,12 +178,12 @@ def run_backup(device_id: int, log_id: int | None = None):
             
             return {"status": "failed", "message": str(e)}
 
-def run_backup_group(group_id: int, log_map: dict[int, int] | None = None):
+def run_backup_group(group_id: int, log_map: dict[int, int] | None = None, command_id: int | None = None):
     with Session(engine) as session:
         devices = session.exec(select(Device).where(Device.group_id == group_id)).all()
         results = []
         for device in devices:
             log_id = log_map.get(device.id) if log_map else None
-            result = run_backup(device.id, log_id)
+            result = run_backup(device.id, log_id, command_id=command_id)
             results.append(result)
         return results

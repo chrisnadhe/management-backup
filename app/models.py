@@ -44,6 +44,7 @@ class Schedule(SQLModel, table=True):
     enabled: bool = Field(default=True)
     limit_to_device_id: Optional[int] = Field(default=None, foreign_key="device.id")
     limit_to_group_id: Optional[int] = Field(default=None, foreign_key="devicegroup.id")
+    command_id: Optional[int] = Field(default=None, foreign_key="command.id")
     next_run: Optional[datetime] = None
     last_run: Optional[datetime] = None
 

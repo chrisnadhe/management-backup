@@ -28,6 +28,22 @@
             </div>
 
             <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="command_id">
+                    Command Template (Optional)
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="command_id" name="command_id">
+                    <option value="" selected>None (Run all commands)</option>
+                    {% for cmd in commands %}
+                    <option value="{{ cmd.id }}" {% if schedule and schedule.command_id==cmd.id %}selected{% endif %}>{{
+                        cmd.name }} ({{ cmd.platform }})</option>
+                    {% endfor %}
+                </select>
+                <p class="text-gray-600 text-xs italic mt-1">If selected, only this command will be executed.</p>
+            </div>
+
+            <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-bold mb-2" for="limit_to_device_id">
                     Target Device (Optional)
                 </label>

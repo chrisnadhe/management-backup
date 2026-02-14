@@ -20,6 +20,7 @@ async def list_backups(request: Request, session: Session = SessionDep):
 async def trigger_group_backup(
     group_id: int,
     background_tasks: BackgroundTasks,
+    command_id: int = Form(None),
     session: Session = SessionDep
 ):
     group = session.get(DeviceGroup, group_id)
@@ -44,7 +45,7 @@ async def trigger_group_backup(
             session.refresh(backup_log)
             log_map[device.id] = backup_log.id
 
-    background_tasks.add_task(run_backup_group, group_id, log_map)
+    background_tasks.add_task(run_backup_group, group_id, log_map, command_id)
     return RedirectResponse(url=f"/backups?msg=Group backup started for {group.name}", status_code=303)
 
 @router.post("/run/{device_id}", response_class=RedirectResponse)
@@ -52,6 +53,7 @@ async def trigger_backup(
     device_id: int,
     background_tasks: BackgroundTasks,
     request: Request,
+    command_id: int = Form(None),
     session: Session = SessionDep
 ):
     device = session.get(Device, device_id)
@@ -72,7 +74,7 @@ async def trigger_backup(
     session.commit()
     session.refresh(backup_log)
 
-    background_tasks.add_task(run_backup, device_id, backup_log.id)
+    background_tasks.add_task(run_backup, device_id, backup_log.id, command_id)
     
     return RedirectResponse(url=f"/backups?msg=Backup started for {device.hostname}", status_code=303)
 

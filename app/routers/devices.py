@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from app.database import SessionDep
-from app.models import Device, Credential, DeviceGroup
+from app.models import Device, Credential, DeviceGroup, Command
 
 router = APIRouter(prefix="/devices", tags=["devices"])
 templates = Jinja2Templates(directory="app/templates")
@@ -11,7 +11,8 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/", response_class=HTMLResponse)
 async def list_devices(request: Request, session: Session = SessionDep):
     devices = session.exec(select(Device)).all()
-    return templates.TemplateResponse("devices.html", {"request": request, "devices": devices})
+    commands = session.exec(select(Command)).all()
+    return templates.TemplateResponse("devices.html", {"request": request, "devices": devices, "commands": commands})
 
 @router.get("/new", response_class=HTMLResponse)
 async def new_device_form(request: Request, session: Session = SessionDep):
