@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetBackup Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        orange: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                            950: '#431407',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-gray-100 font-sans leading-normal tracking-normal flex flex-col min-h-screen">
+
+    <nav class="bg-orange-600 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="/" class="text-white text-2xl font-bold">NetBackup</a>
+            <div class="flex space-x-6 text-white font-medium">
+                <a href="/" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
+                </a>
+                <a href="/devices"
+                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-server mr-2"></i> Devices
+                </a>
+                <a href="/groups"
+                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-layer-group mr-2"></i> Groups
+                </a>
+                <a href="/credentials"
+                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-key mr-2"></i> Credentials
+                </a>
+                <a href="/commands"
+                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-terminal mr-2"></i> Commands
+                </a>
+                <a href="/schedules"
+                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-calendar-alt mr-2"></i> Schedules
+                </a>
+                <a href="/backups"
+                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-history mr-2"></i> Backups
+                </a>
+                <a href="/logs" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
+                    hx-boost="true">
+                    <i class="fas fa-file-alt mr-2"></i> Logs
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto mt-8 p-4 flex-grow">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center">
+            &copy; 2026 NetBackup Manager
+        </div>
+    </footer>
+
+</body>
+
+</html>

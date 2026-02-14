@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded my-6">
+    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">Backups</h2>
+        <div class="flex gap-2">
+            <!-- Form to trigger backup for a specific device -->
+            <form action="/backups/run/all" method="post" class="flex gap-2">
+                <!-- triggering all not implemented yet, placeholder -->
+            </form>
+            <div class="relative">
+                <button class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
+                    onclick="document.getElementById('device-select').classList.toggle('hidden')">
+                    Run Backup...
+                </button>
+                <div id="device-select"
+                    class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                    {% for device in devices %}
+                    <form action="/backups/run/{{ device.id }}" method="post" class="block w-full text-left">
+                        <button type="submit"
+                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                            {{ device.hostname }}
+                        </button>
+                    </form>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div id="flash-message" class="px-6 pt-4 hidden">
+        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4" role="alert">
+            <p id="flash-text"></p>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Time</th>
+                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Device</th>
+                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
+                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">File</th>
+                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Log</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700">
+                {% for log in backups %}
+                <tr class="{% if loop.index is odd %}bg-gray-100{% endif %} hover:bg-gray-200 cursor-pointer transition-colors"
+                    onclick="toggleRow('log-{{ log.id }}')">
+                    <td class="w-1/5 text-left py-3 px-4">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td class="w-1/5 text-left py-3 px-4">
+                        {% if log.device %}{{ log.device.hostname }}{% else %}Unknown Device{% endif %}
+                    </td>
+                    <td class="w-1/5 text-left py-3 px-4">
+                        <span class="inline-block rounded-full px-3 py-1 text-sm font-semibold text-white 
+                            {% if log.status == 'success' %}bg-green-500
+                            {% elif log.status == 'running' %}bg-yellow-500
+                            {% else %}bg-red-500{% endif %}">
+                            {{ log.status }}
+                        </span>
+                    </td>
+                    <td class="w-1/5 text-left py-3 px-4">
+                        {% if log.file_path %}
+                        <a href="/backups/download/{{ log.id }}" class="text-blue-500 hover:text-blue-800"
+                            onclick="event.stopPropagation()">Download</a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="w-1/5 text-left py-3 px-4 text-xs font-mono">
+                        <div class="flex items-center">
+                            <span class="truncate max-w-xs mr-2">{{ (log.log_output or '') | truncate(50, True, '...')
+                                }}</span>
+                            <span class="text-gray-500 text-xs transform transition-transform duration-200"
+                                id="icon-log-{{ log.id }}">
+                                &#9660; <!-- Down Arrow -->
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                <!-- Expandable Row -->
+                <tr id="log-{{ log.id }}" class="hidden bg-gray-50">
+                    <td colspan="5" class="px-6 py-4 border-b border-gray-200">
+                        <div
+                            class="text-sm font-mono whitespace-pre-wrap text-gray-700 bg-white p-4 rounded border overflow-x-auto max-h-96">
+                            <strong>Full Log:</strong><br>
+                            {{ log.log_output }}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<script>
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function (event) {
+        var dropdown = document.getElementById('device-select');
+        var button = event.target.closest('button');
+        if (!button && !dropdown.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    function toggleRow(rowId) {
+        const row = document.getElementById(rowId);
+        const icon = document.getElementById('icon-' + rowId);
+
+        if (row.classList.contains('hidden')) {
+            row.classList.remove('hidden');
+            if (icon) icon.style.transform = 'rotate(180deg)';
+        } else {
+            row.classList.add('hidden');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // Check for query params to show flash message
+    const urlParams = new URLSearchParams(window.location.search);
+    const msg = urlParams.get('msg');
+    const error = urlParams.get('error');
+
+    if (msg || error) {
+        const flashDiv = document.getElementById('flash-message');
+        const flashText = document.getElementById('flash-text');
+
+        if (msg) {
+            flashText.innerText = msg;
+            flashDiv.querySelector('div').classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
+        } else if (error) {
+            flashText.innerText = error;
+            flashDiv.querySelector('div').classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
+            flashDiv.querySelector('div').classList.add('bg-red-100', 'border-red-500', 'text-red-700');
+        }
+
+        flashDiv.classList.remove('hidden');
+
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            flashDiv.classList.add('hidden');
+            // Optional: clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 5000);
+    }
+</script>
+{% endblock %}

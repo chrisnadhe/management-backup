@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded my-6">
+    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">Schedules</h2>
+        <a href="/schedules/new" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded">
+            Add Schedule
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Name</th>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Cron Expression</th>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700">
+                {% for schedule in schedules %}
+                <tr class="{% if loop.index is odd %}bg-gray-100{% endif %} hover:bg-gray-200">
+                    <td class="w-1/4 text-left py-3 px-4">{{ schedule.name }}</td>
+                    <td class="w-1/4 text-left py-3 px-4 font-mono">{{ schedule.cron_expression }}</td>
+                    <td class="w-1/4 text-left py-3 px-4">
+                        {% if schedule.enabled %}
+                        <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Enabled</span>
+                        {% else %}
+                        <span class="bg-red-200 text-red-600 py-1 px-3 rounded-full text-xs">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td class="w-1/4 text-left py-3 px-4 flex gap-2">
+                        <a href="/schedules/{{ schedule.id }}/edit"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs">Edit</a>
+                        <form action="/schedules/{{ schedule.id }}/delete" method="post"
+                            onsubmit="return confirm('Are you sure?');">
+                            <button type="submit"
+                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

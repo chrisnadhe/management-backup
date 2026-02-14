@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto mt-10">
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">{% if device %}Edit{% else %}New{% endif %} Device</h2>
+        <form method="post">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="hostname">
+                    Hostname
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="hostname" name="hostname" type="text" placeholder="Device Hostname"
+                    value="{{ device.hostname if device else '' }}" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="ip_address">
+                    IP Address
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="ip_address" name="ip_address" type="text" placeholder="192.168.1.1"
+                    value="{{ device.ip_address if device else '' }}" required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="port">
+                    Port
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="port" name="port" type="number" placeholder="22" value="{{ device.port if device else 22 }}"
+                    required>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="device_type">
+                    Device Type
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="device_type" name="device_type" required>
+                    <option value="cisco_ios" {% if device and device.device_type=='cisco_ios' %}selected{% endif %}>
+                        Cisco IOS</option>
+                    <option value="cisco_nxos" {% if device and device.device_type=='cisco_nxos' %}selected{% endif %}>
+                        Cisco NX-OS</option>
+                    <option value="juniper_junos" {% if device and device.device_type=='juniper_junos' %}selected{%
+                        endif %}>Juniper JunOS</option>
+                    <option value="arista_eos" {% if device and device.device_type=='arista_eos' %}selected{% endif %}>
+                        Arista EOS</option>
+                    <option value="hp_procurve" {% if device and device.device_type=='hp_procurve' %}selected{% endif
+                        %}>HP ProCurve</option>
+                    <option value="mikrotik_routeros" {% if device and device.device_type=='mikrotik_routeros'
+                        %}selected{% endif %}>Mikrotik RouterOS</option>
+                </select>
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="credential_id">
+                    Credential
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="credential_id" name="credential_id" required>
+                    <option value="" disabled selected>Select a credential</option>
+                    {% for cred in credentials %}
+                    <option value="{{ cred.id }}" {% if device and device.credential_id==cred.id %}selected{% endif %}>
+                        {{ cred.name }} ({{ cred.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="group_id">
+                    Group (Optional)
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="group_id" name="group_id">
+                    <option value="" selected>None</option>
+                    {% for group in groups %}
+                    <option value="{{ group.id }}" {% if device and device.group_id==group.id %}selected{% endif %}>{{
+                        group.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button
+                    class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="submit">
+                    {% if device %}Update{% else %}Create{% endif %}
+                </button>
+                <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+                    href="/devices">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

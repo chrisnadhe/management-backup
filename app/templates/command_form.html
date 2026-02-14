@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto mt-10">
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">{% if command %}Edit{% else %}New{% endif %} Command</h2>
+        <form method="post">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+                    Name
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="name" name="name" type="text" placeholder="e.g., Show Running Config"
+                    value="{{ command.name if command else '' }}" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="platform">
+                    Platform
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="platform" name="platform" required>
+                    <option value="cisco_ios" {% if command and command.platform=='cisco_ios' %}selected{% endif %}>
+                        Cisco IOS</option>
+                    <option value="cisco_nxos" {% if command and command.platform=='cisco_nxos' %}selected{% endif %}>
+                        Cisco NX-OS</option>
+                    <option value="juniper_junos" {% if command and command.platform=='juniper_junos' %}selected{% endif
+                        %}>Juniper JunOS</option>
+                    <option value="arista_eos" {% if command and command.platform=='arista_eos' %}selected{% endif %}>
+                        Arista EOS</option>
+                    <option value="hp_procurve" {% if command and command.platform=='hp_procurve' %}selected{% endif %}>
+                        HP ProCurve</option>
+                    <option value="mikrotik_routeros" {% if command and command.platform=='mikrotik_routeros'
+                        %}selected{% endif %}>Mikrotik RouterOS</option>
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="command_text">
+                    Command
+                </label>
+                <textarea
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="command_text" name="command_text" placeholder="e.g., show running-config" required
+                    rows="4">{{ command.command_text if command else '' }}</textarea>
+                <p class="text-gray-600 text-xs italic mt-2">The command to execute on the device to get the
+                    configuration.</p>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button
+                    class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="submit">
+                    {% if command %}Update{% else %}Create{% endif %}
+                </button>
+                <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+                    href="/commands">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

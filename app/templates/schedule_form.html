@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="w-full max-w-lg mx-auto mt-10">
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h2 class="text-2xl font-bold mb-6 text-gray-800">{% if schedule %}Edit{% else %}New{% endif %} Schedule</h2>
+        <form action="{% if schedule %}/schedules/{{ schedule.id }}/update{% else %}/schedules/create{% endif %}"
+            method="post">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
+                    Name
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="name" name="name" type="text" placeholder="Daily Backup"
+                    value="{{ schedule.name if schedule else '' }}" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="cron_expression">
+                    Cron Expression
+                </label>
+                <input
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="cron_expression" name="cron_expression" type="text" placeholder="0 2 * * *"
+                    value="{{ schedule.cron_expression if schedule else '' }}" required>
+                <p class="text-gray-600 text-xs italic mt-1">Format: minute hour day month day_of_week</p>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="limit_to_device_id">
+                    Target Device (Optional)
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="limit_to_device_id" name="limit_to_device_id">
+                    <option value="" selected>None (Run for all/group)</option>
+                    {% for device in devices %}
+                    <option value="{{ device.id }}" {% if schedule and schedule.limit_to_device_id==device.id
+                        %}selected{% endif %}>{{ device.hostname }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="limit_to_group_id">
+                    Target Group (Optional)
+                </label>
+                <select
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    id="limit_to_group_id" name="limit_to_group_id">
+                    <option value="" selected>None</option>
+                    {% for group in groups %}
+                    <option value="{{ group.id }}" {% if schedule and schedule.limit_to_group_id==group.id %}selected{%
+                        endif %}>{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-6">
+                <label class="flex items-center">
+                    <input type="checkbox" name="enabled" class="form-checkbox h-5 w-5 text-orange-600" {% if not
+                        schedule or schedule.enabled %}checked{% endif %}>
+                    <span class="ml-2 text-gray-700">Enabled</span>
+                </label>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <button
+                    class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    type="submit">
+                    {% if schedule %}Update{% else %}Create{% endif %}
+                </button>
+                <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
+                    href="/schedules">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

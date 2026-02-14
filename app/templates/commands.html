@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded my-6">
+    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-2xl font-bold text-gray-800">Backup Commands</h2>
+        <a href="/commands/new" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded">
+            Add Command
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Name</th>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Platform</th>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Command</th>
+                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700">
+                {% for command in commands %}
+                <tr class="{% if loop.index is odd %}bg-gray-100{% endif %} hover:bg-gray-200">
+                    <td class="w-1/4 text-left py-3 px-4">{{ command.name }}</td>
+                    <td class="w-1/4 text-left py-3 px-4">{{ command.platform }}</td>
+                    <td class="w-1/4 text-left py-3 px-4 font-mono text-sm bg-gray-50 p-1">{{ command.command_text }}
+                    </td>
+                    <td class="w-1/4 text-left py-3 px-4 flex gap-2">
+                        <a href="/commands/{{ command.id }}/edit"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs">Edit</a>
+                        <form action="/commands/{{ command.id }}/delete" method="post"
+                            onsubmit="return confirm('Are you sure?');">
+                            <button type="submit"
+                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

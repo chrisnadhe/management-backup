@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-white shadow-md rounded my-6 p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Session Log: {{ log.device.hostname }} - {{
+            log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</h2>
+        <a href="/logs" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Back</a>
+    </div>
+
+    <div class="mb-4">
+        <h3 class="font-bold text-lg mb-2">Netmiko Session Output:</h3>
+        <pre
+            class="bg-gray-900 text-green-400 p-4 rounded overflow-auto h-96 whitespace-pre-wrap">{{ session_content }}</pre>
+    </div>
+</div>
+{% endblock %}
