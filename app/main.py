@@ -35,6 +35,23 @@ def on_startup():
     start_scheduler()
 
 
+from sqlmodel import select, func, Session
+from app.database import SessionDep
+
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+async def dashboard(request: Request, session: Session = SessionDep):
+    # Stats
+    total_devices = session.exec(select(func.count(Device.id))).one()
+    successful_backups = session.exec(select(func.count(BackupLog.id)).where(BackupLog.status == "success")).one()
+    failed_backups = session.exec(select(func.count(BackupLog.id)).where(BackupLog.status == "failed")).one()
+    
+    # Recent Activity (last 5)
+    recent_logs = session.exec(select(BackupLog).order_by(BackupLog.timestamp.desc()).limit(5)).all()
+
+    return templates.TemplateResponse("dashboard.html", {
+        "request": request,
+        "total_devices": total_devices,
+        "successful_backups": successful_backups,
+        "failed_backups": failed_backups,
+        "recent_logs": recent_logs
+    })
