@@ -1,4 +1,3 @@
 hostname,ip_address,port,device_type,credential_name,group_name
 Router-Edge-01,192.168.1.1,22,cisco_ios,Core-Credentials,Edge-Routers
 Switch-Access-01,192.168.1.10,22,cisco_ios,Core-Credentials,Access-Switches
-Firewall-Main,10.0.0.1,22,fortinet,FW-Admin,Security-Zone

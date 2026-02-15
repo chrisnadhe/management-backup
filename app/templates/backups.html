@@ -18,7 +18,7 @@
                     class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
                     {% for device in devices %}
                     <button type="button"
-                        onclick="openBackupModal({{ device.id }}, '{{ device.hostname }}', '{{ device.device_type }}')"
+                        onclick="openBackupModal('{{ device.id }}', '{{ device.hostname }}', '{{ device.device_type }}')"
                         class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
                         {{ device.hostname }}
                     </button>

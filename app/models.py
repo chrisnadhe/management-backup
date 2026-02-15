@@ -1,5 +1,5 @@
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import Field, SQLModel, Relationship
 
 class Credential(SQLModel, table=True):
@@ -42,7 +42,7 @@ class BackupLog(SQLModel, table=True):
     device_id: int = Field(foreign_key="device.id")
     schedule_id: Optional[int] = Field(default=None, foreign_key="schedule.id")
     status: str # "success", "failed"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
     log_output: Optional[str] = None
     file_path: Optional[str] = None
     session_log_path: Optional[str] = None

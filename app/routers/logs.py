@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Request, HTTPException
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from app.database import SessionDep
-from app.models import BackupLog, Device
+from app.models import BackupLog
 import os
 
 router = APIRouter(prefix="/logs", tags=["logs"])

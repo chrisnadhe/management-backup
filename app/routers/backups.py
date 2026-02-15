@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Form, Request, BackgroundTasks
+from fastapi import APIRouter, Form, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select

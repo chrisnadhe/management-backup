@@ -1,14 +1,36 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
-from sqlmodel import SQLModel
-from app.database import engine
+from sqlmodel import SQLModel, select, func, Session
 
-# Import models to register them with SQLModel
-from app.models import Device, Credential, Command, Schedule, BackupLog
+# Database and Models
+from app.database import engine, SessionDep
+from app.models import Device, BackupLog
 
-app = FastAPI(title="Network Backup Manager")
+# Services
+from app.services.scheduler_service import start_scheduler
+
+# Routers
+from app.routers import devices, groups, credentials, commands, backups, schedules, logs
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    SQLModel.metadata.create_all(engine)
+    start_scheduler()
+    
+    yield
+    
+    # Shutdown logic
+    print("Shutting down...")
+
+# --- App Definition ---
+app = FastAPI(
+    title="Network Backup Manager",
+    lifespan=lifespan
+)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -17,9 +39,6 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
 # Include routers
-from app.routers import devices, groups, credentials, commands, backups, schedules, logs
-from app.services.scheduler_service import start_scheduler
-
 app.include_router(devices.router)
 app.include_router(groups.router)
 app.include_router(credentials.router)
@@ -28,15 +47,7 @@ app.include_router(backups.router)
 app.include_router(schedules.router)
 app.include_router(logs.router)
 
-
-@app.on_event("startup")
-def on_startup():
-    SQLModel.metadata.create_all(engine)
-    start_scheduler()
-
-
-from sqlmodel import select, func, Session
-from app.database import SessionDep
+# --- Routes ---
 
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, session: Session = SessionDep):
