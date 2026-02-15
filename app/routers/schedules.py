@@ -26,12 +26,12 @@ async def new_schedule_form(request: Request, session: Session = SessionDep):
         "commands": commands
     })
 
-@router.post("/new", response_class=HTMLResponse)
+@router.post("/create", response_class=HTMLResponse)
 async def create_schedule(
     request: Request,
     name: str = Form(...),
     cron_expression: str = Form(...),
-    enabled: bool = Form(True),
+    enabled: bool = Form(False),
     limit_to_device_id: int = Form(None),
     limit_to_group_id: int = Form(None),
     command_id: int = Form(None),
@@ -40,6 +40,7 @@ async def create_schedule(
     schedule = Schedule(
         name=name, 
         cron_expression=cron_expression,
+        enabled=enabled,
         limit_to_device_id=limit_to_device_id,
         limit_to_group_id=limit_to_group_id,
         command_id=command_id
@@ -47,26 +48,9 @@ async def create_schedule(
     session.add(schedule)
     session.commit()
     session.refresh(schedule)
-    # Add job to scheduler
-    add_job_to_scheduler(schedule)
-    return RedirectResponse(url="/schedules", status_code=303)
-
-@router.post("/create", response_class=HTMLResponse)
-async def create_schedule_logic( # Avoiding /new name conflict if any
-    request: Request,
-    name: str = Form(...),
-    cron_expression: str = Form(...),
-    enabled: bool = Form(False), 
-    session: Session = SessionDep
-):
-    # FastAPI casts "on" to True? Yes.
-    schedule = Schedule(name=name, cron_expression=cron_expression, enabled=enabled)
-    session.add(schedule)
-    session.commit()
-    session.refresh(schedule)
     
-    if enabled:
-        add_job_to_scheduler(schedule)
+    # scheduler_service handle enabling logic internally now
+    add_job_to_scheduler(schedule)
     
     return RedirectResponse(url="/schedules", status_code=303)
 
@@ -90,23 +74,28 @@ async def update_schedule(
     schedule_id: int,
     name: str = Form(...),
     cron_expression: str = Form(...),
+    enabled: bool = Form(False),
     limit_to_device_id: int = Form(None),
     limit_to_group_id: int = Form(None),
     command_id: int = Form(None),
     session: Session = SessionDep
 ):
     schedule = session.get(Schedule, schedule_id)
+    if not schedule:
+        return RedirectResponse(url="/schedules?error=Schedule not found", status_code=303)
+        
     schedule.name = name
     schedule.cron_expression = cron_expression
+    schedule.enabled = enabled
     schedule.limit_to_device_id = limit_to_device_id
     schedule.limit_to_group_id = limit_to_group_id
     schedule.command_id = command_id
+    
     session.add(schedule)
     session.commit()
     session.refresh(schedule)
     
-    # Update job
-    remove_job_from_scheduler(schedule.id)
+    # Update job status in scheduler
     add_job_to_scheduler(schedule)
         
     return RedirectResponse(url="/schedules", status_code=303)

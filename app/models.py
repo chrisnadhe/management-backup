@@ -37,6 +37,19 @@ class Command(SQLModel, table=True):
     command_text: str
     platform: str = Field(default="cisco_ios")
 
+class BackupLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    device_id: int = Field(foreign_key="device.id")
+    schedule_id: Optional[int] = Field(default=None, foreign_key="schedule.id")
+    status: str # "success", "failed"
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    log_output: Optional[str] = None
+    file_path: Optional[str] = None
+    session_log_path: Optional[str] = None
+    
+    device: Optional[Device] = Relationship(back_populates="backups")
+    schedule: Optional["Schedule"] = Relationship(back_populates="backups")
+
 class Schedule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
@@ -47,14 +60,7 @@ class Schedule(SQLModel, table=True):
     command_id: Optional[int] = Field(default=None, foreign_key="command.id")
     next_run: Optional[datetime] = None
     last_run: Optional[datetime] = None
-
-class BackupLog(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    device_id: int = Field(foreign_key="device.id")
-    status: str # "success", "failed"
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    log_output: Optional[str] = None
-    file_path: Optional[str] = None
-    session_log_path: Optional[str] = None
     
-    device: Optional[Device] = Relationship(back_populates="backups")
+    backups: List[BackupLog] = Relationship(back_populates="schedule")
+    device: Optional[Device] = Relationship() # Helpful for targeting lookup
+    group: Optional[DeviceGroup] = Relationship() # Helpful for targeting lookup

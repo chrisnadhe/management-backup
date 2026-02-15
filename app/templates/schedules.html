@@ -12,18 +12,26 @@
         <table class="min-w-full bg-white">
             <thead class="bg-gray-800 text-white">
                 <tr>
-                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Name</th>
-                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Cron Expression</th>
-                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
-                    <th class="w-1/4 text-left py-3 px-4 uppercase font-semibold text-sm">Actions</th>
+                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Name</th>
+                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Cron</th>
+                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Last Run</th>
+                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Next Run</th>
+                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
+                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Actions</th>
                 </tr>
             </thead>
             <tbody class="text-gray-700">
                 {% for schedule in schedules %}
                 <tr class="{% if loop.index is odd %}bg-gray-100{% endif %} hover:bg-gray-200">
-                    <td class="w-1/4 text-left py-3 px-4">{{ schedule.name }}</td>
-                    <td class="w-1/4 text-left py-3 px-4 font-mono">{{ schedule.cron_expression }}</td>
-                    <td class="w-1/4 text-left py-3 px-4">
+                    <td class="w-1/6 text-left py-3 px-4">{{ schedule.name }}</td>
+                    <td class="w-1/6 text-left py-3 px-4 font-mono text-xs">{{ schedule.cron_expression }}</td>
+                    <td class="w-1/6 text-left py-3 px-4 text-xs">
+                        {{ schedule.last_run.strftime('%Y-%m-%d %H:%M') if schedule.last_run else '-' }}
+                    </td>
+                    <td class="w-1/6 text-left py-3 px-4 text-xs font-bold text-orange-600">
+                        {{ schedule.next_run.strftime('%Y-%m-%d %H:%M') if schedule.next_run else '-' }}
+                    </td>
+                    <td class="w-1/6 text-left py-3 px-4">
                         {% if schedule.enabled %}
                         <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Enabled</span>
                         {% else %}

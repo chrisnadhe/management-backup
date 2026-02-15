@@ -7,7 +7,7 @@ from app.database import engine
 
 BACKUP_DIR = "backups"
 
-def run_backup(device_id: int, log_id: int | None = None, command_id: int | None = None):
+def run_backup(device_id: int, log_id: int | None = None, command_id: int | None = None, schedule_id: int | None = None):
     with Session(engine) as session:
         device = session.get(Device, device_id)
         # If we have a log_id, fetch it to update later. 
@@ -113,6 +113,7 @@ def run_backup(device_id: int, log_id: int | None = None, command_id: int | None
                         backup_log.log_output = log_output
                         backup_log.file_path = filepath
                         backup_log.session_log_path = session_filepath
+                        backup_log.schedule_id = schedule_id
                         session.add(backup_log)
                         session.commit()
                     else:
@@ -134,7 +135,8 @@ def run_backup(device_id: int, log_id: int | None = None, command_id: int | None
                         timestamp=datetime.now(),
                         log_output=log_output,
                         file_path=filepath,
-                        session_log_path=session_filepath
+                        session_log_path=session_filepath,
+                        schedule_id=schedule_id
                     )
                     session.add(backup_log)
                     session.commit()
@@ -151,6 +153,7 @@ def run_backup(device_id: int, log_id: int | None = None, command_id: int | None
                     backup_log.status = "failed"
                     backup_log.log_output = log_output
                     backup_log.session_log_path = session_filepath if os.path.exists(session_filepath) else None
+                    backup_log.schedule_id = schedule_id
                     session.add(backup_log)
                     session.commit()
                 else:
@@ -171,19 +174,20 @@ def run_backup(device_id: int, log_id: int | None = None, command_id: int | None
                     timestamp=datetime.now(),
                     log_output=log_output,
                     file_path=None,
-                    session_log_path=session_filepath if os.path.exists(session_filepath) else None
+                    session_log_path=session_filepath if os.path.exists(session_filepath) else None,
+                    schedule_id=schedule_id
                 )
                 session.add(backup_log)
                 session.commit()
             
             return {"status": "failed", "message": str(e)}
 
-def run_backup_group(group_id: int, log_map: dict[int, int] | None = None, command_id: int | None = None):
+def run_backup_group(group_id: int, log_map: dict[int, int] | None = None, command_id: int | None = None, schedule_id: int | None = None):
     with Session(engine) as session:
         devices = session.exec(select(Device).where(Device.group_id == group_id)).all()
         results = []
         for device in devices:
             log_id = log_map.get(device.id) if log_map else None
-            result = run_backup(device.id, log_id, command_id=command_id)
+            result = run_backup(device.id, log_id, command_id=command_id, schedule_id=schedule_id)
             results.append(result)
         return results

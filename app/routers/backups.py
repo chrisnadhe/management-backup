@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from app.database import SessionDep
-from app.models import BackupLog, Device, DeviceGroup
+from app.models import BackupLog, Device, DeviceGroup, Command
 from app.services.backup_service import run_backup, run_backup_group
 import os
 
@@ -14,7 +14,8 @@ templates = Jinja2Templates(directory="app/templates")
 async def list_backups(request: Request, session: Session = SessionDep):
     backups = session.exec(select(BackupLog).order_by(BackupLog.timestamp.desc())).all()
     devices = session.exec(select(Device)).all()
-    return templates.TemplateResponse("backups.html", {"request": request, "backups": backups, "devices": devices})
+    commands = session.exec(select(Command)).all()
+    return templates.TemplateResponse("backups.html", {"request": request, "backups": backups, "devices": devices, "commands": commands})
 
 @router.post("/run/group/{group_id}", response_class=RedirectResponse)
 async def trigger_group_backup(
