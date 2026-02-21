@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Form, Request, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col, func
 from app.database import SessionDep
-from app.models import BackupLog, Device, DeviceGroup, Command
+from app.models import BackupLog, Device, DeviceGroup, Command, Schedule
 from app.services.backup_service import run_backup, run_backup_group
 import os
 
@@ -11,11 +11,50 @@ router = APIRouter(prefix="/backups", tags=["backups"])
 templates = Jinja2Templates(directory="app/templates")
 
 @router.get("/", response_class=HTMLResponse)
-async def list_backups(request: Request, session: Session = SessionDep):
-    backups = session.exec(select(BackupLog).order_by(BackupLog.timestamp.desc())).all()
+async def list_backups(
+    request: Request, 
+    session: Session = SessionDep,
+    q: str = "",
+    page: int = 1,
+    limit: int = 20
+):
+    offset = (page - 1) * limit
+    
+    # Base query
+    statement = select(BackupLog).join(Device, isouter=True)
+    
+    # Filtering
+    if q:
+        # Search by device hostname, status, or log output
+        statement = statement.where(
+            (col(Device.hostname).contains(q)) | 
+            (col(BackupLog.status).contains(q)) |
+            (col(BackupLog.log_output).contains(q))
+        )
+    
+    # Total count for pagination
+    total_count = session.exec(select(func.count()).select_from(statement.subquery())).one()
+    
+    # Pagination and sorting
+    statement = statement.order_by(BackupLog.timestamp.desc()).offset(offset).limit(limit)
+    backups = session.exec(statement).all()
+    
     devices = session.exec(select(Device)).all()
     commands = session.exec(select(Command)).all()
-    return templates.TemplateResponse("backups.html", {"request": request, "backups": backups, "devices": devices, "commands": commands})
+    
+    total_pages = (total_count + limit - 1) // limit
+    
+    return templates.TemplateResponse("backups.html", {
+        "request": request, 
+        "backups": backups, 
+        "devices": devices, 
+        "commands": commands,
+        "q": q,
+        "page": page,
+        "limit": limit,
+        "total_pages": total_pages,
+        "total_count": total_count
+    })
 
 @router.post("/run/group/{group_id}", response_class=RedirectResponse)
 async def trigger_group_backup(
