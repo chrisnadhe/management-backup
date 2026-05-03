@@ -9,7 +9,7 @@ from app.services.scheduler_service import add_job_to_scheduler, remove_job_from
 router = APIRouter(prefix="/schedules", tags=["schedules"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 async def list_schedules(request: Request, session: Session = SessionDep):
     schedules = session.exec(select(Schedule)).all()
     return templates.TemplateResponse("schedules.html", {"request": request, "schedules": schedules})

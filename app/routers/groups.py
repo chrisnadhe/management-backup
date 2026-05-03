@@ -8,7 +8,7 @@ from app.models import DeviceGroup, Command
 router = APIRouter(prefix="/groups", tags=["groups"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 async def list_groups(request: Request, session: Session = SessionDep):
     groups = session.exec(select(DeviceGroup)).all()
     commands = session.exec(select(Command)).all()

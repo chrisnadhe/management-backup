@@ -8,7 +8,7 @@ from app.models import Credential
 router = APIRouter(prefix="/credentials", tags=["credentials"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 async def list_credentials(request: Request, session: Session = SessionDep):
     credentials = session.exec(select(Credential)).all()
     return templates.TemplateResponse("credentials.html", {"request": request, "credentials": credentials})

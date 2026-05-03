@@ -8,7 +8,7 @@ from app.models import Command
 router = APIRouter(prefix="/commands", tags=["commands"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 async def list_commands(request: Request, session: Session = SessionDep):
     commands = session.exec(select(Command)).all()
     return templates.TemplateResponse("commands.html", {"request": request, "commands": commands})

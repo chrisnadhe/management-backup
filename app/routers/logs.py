@@ -9,7 +9,7 @@ import os
 router = APIRouter(prefix="/logs", tags=["logs"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 async def list_logs(
     request: Request, 
     session: Session = SessionDep,

@@ -10,7 +10,7 @@ import os
 router = APIRouter(prefix="/backups", tags=["backups"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 async def list_backups(
     request: Request, 
     session: Session = SessionDep,

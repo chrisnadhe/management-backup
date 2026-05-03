@@ -8,7 +8,7 @@ from app.models import Device, Credential, DeviceGroup, Command
 router = APIRouter(prefix="/devices", tags=["devices"])
 templates = Jinja2Templates(directory="app/templates")
 
-@router.get("/", response_class=HTMLResponse)
+@router.get("", response_class=HTMLResponse)
 async def list_devices(
     request: Request, 
     session: Session = SessionDep,

@@ -6,25 +6,25 @@
         <div class="flex items-center gap-4">
             <h2 class="text-2xl font-bold text-gray-800">Backups</h2>
             <div class="flex bg-gray-100 rounded-lg p-1">
-                <a href="/backups/?view=list&q={{ q }}" 
+                <a href="/backups?view=list&q={{ q }}" 
                    class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors {% if view == 'list' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
                     List View
                 </a>
-                <a href="/backups/?view=grouped&q={{ q }}" 
+                <a href="/backups?view=grouped&q={{ q }}" 
                    class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors {% if view == 'grouped' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
                     Grouped View
                 </a>
             </div>
         </div>
         <div class="flex flex-1 max-w-md w-full">
-            <form action="/backups/" method="get" class="flex w-full gap-2">
+            <form action="/backups" method="get" class="flex w-full gap-2">
                 <input type="text" name="q" value="{{ q }}" placeholder="Search device, status, or log..."
                     class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                 <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded">
                     Search
                 </button>
                 {% if q %}
-                <a href="/backups/"
+                <a href="/backups"
                     class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded flex items-center justify-center">
                     Clear
                 </a>
@@ -245,7 +245,7 @@
         </div>
         <div class="flex gap-2">
             {% if page > 1 %}
-            <a href="/backups/?page={{ page - 1 }}&q={{ q }}&limit={{ limit }}&view=list"
+            <a href="/backups?page={{ page - 1 }}&q={{ q }}&limit={{ limit }}&view=list"
                 class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded text-sm transition-colors">
                 Previous
             </a>
@@ -258,7 +258,7 @@
                 Page <span class="text-gray-900">{{ page }}</span> of {{ total_pages if total_pages > 0 else 1 }}
             </div>
 
-            {% if page < total_pages %} <a href="/backups/?page={{ page + 1 }}&q={{ q }}&limit={{ limit }}&view=list"
+            {% if page < total_pages %} <a href="/backups?page={{ page + 1 }}&q={{ q }}&limit={{ limit }}&view=list"
                 class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded text-sm transition-colors">
                 Next
                 </a>
