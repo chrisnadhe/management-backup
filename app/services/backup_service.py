@@ -182,12 +182,26 @@ def run_backup(device_id: int, log_id: int | None = None, command_id: int | None
             
             return {"status": "failed", "message": str(e)}
 
+from concurrent.futures import ThreadPoolExecutor
+
 def run_backup_group(group_id: int, log_map: dict[int, int] | None = None, command_id: int | None = None, schedule_id: int | None = None):
     with Session(engine) as session:
         devices = session.exec(select(Device).where(Device.group_id == group_id)).all()
-        results = []
+    
+    # Use ThreadPoolExecutor to run backups in parallel
+    results = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
         for device in devices:
             log_id = log_map.get(device.id) if log_map else None
-            result = run_backup(device.id, log_id, command_id=command_id, schedule_id=schedule_id)
-            results.append(result)
-        return results
+            futures.append(
+                executor.submit(run_backup, device.id, log_id, command_id, schedule_id)
+            )
+        
+        for future in futures:
+            try:
+                results.append(future.result())
+            except Exception as e:
+                results.append({"status": "failed", "message": str(e)})
+    
+    return results
