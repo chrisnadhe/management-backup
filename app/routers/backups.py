@@ -16,8 +16,75 @@ async def list_backups(
     session: Session = SessionDep,
     q: str = "",
     page: int = 1,
-    limit: int = 20
+    limit: int = 20,
+    view: str = "list"
 ):
+    if view == "grouped":
+        # Grouped view logic
+        groups = session.exec(select(DeviceGroup)).all()
+        devices = session.exec(select(Device)).all()
+        
+        # Organize devices by group
+        grouped_data = []
+        
+        # Add real groups
+        for group in groups:
+            group_devices_info = []
+            group_devices = [d for d in devices if d.group_id == group.id]
+            for d in group_devices:
+                # Fetch latest 10 backups for each device
+                backups = session.exec(
+                    select(BackupLog)
+                    .where(BackupLog.device_id == d.id)
+                    .order_by(BackupLog.timestamp.desc())
+                    .limit(10)
+                ).all()
+                group_devices_info.append({
+                    "device": d,
+                    "latest_backups": backups
+                })
+            
+            if group_devices_info:
+                grouped_data.append({
+                    "group": group,
+                    "devices": group_devices_info
+                })
+        
+        # Add unassigned devices
+        unassigned_devices = [d for d in devices if d.group_id is None]
+        unassigned_devices_info = []
+        for d in unassigned_devices:
+            backups = session.exec(
+                select(BackupLog)
+                .where(BackupLog.device_id == d.id)
+                .order_by(BackupLog.timestamp.desc())
+                .limit(10)
+            ).all()
+            unassigned_devices_info.append({
+                "device": d,
+                "latest_backups": backups
+            })
+            
+        if unassigned_devices_info:
+            grouped_data.append({
+                "group": {"name": "Unassigned", "description": "Devices not assigned to any group"},
+                "devices": unassigned_devices_info
+            })
+            
+        commands = session.exec(select(Command)).all()
+            
+        return templates.TemplateResponse("backups.html", {
+            "request": request,
+            "grouped_data": grouped_data,
+            "view": view,
+            "q": q,
+            "page": page,
+            "limit": limit,
+            "devices": devices,  # Required for the Run Backup dropdown
+            "commands": commands # Required for the Backup modal
+        })
+
+    # Default List view logic
     offset = (page - 1) * limit
     
     # Base query
@@ -53,7 +120,8 @@ async def list_backups(
         "page": page,
         "limit": limit,
         "total_pages": total_pages,
-        "total_count": total_count
+        "total_count": total_count,
+        "view": view
     })
 
 @router.post("/run/group/{group_id}", response_class=RedirectResponse)
