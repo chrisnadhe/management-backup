@@ -258,8 +258,11 @@
     function compareSelected() {
         const checkboxes = document.querySelectorAll('.compare-checkbox:checked');
         if (checkboxes.length === 2) {
-            const id1 = checkboxes[0].value;
-            const id2 = checkboxes[1].value;
+            // Checkbox 0 (lebih atas di tabel) = Backup Terbaru
+            // Checkbox 1 (lebih bawah di tabel) = Backup Terlama
+            // Kita balik agar id1 (kiri/Lama) mendapat yang terlama, dan id2 (kanan/Baru) mendapat terbaru
+            const id1 = checkboxes[1].value;
+            const id2 = checkboxes[0].value;
             htmx.ajax('GET', `/backups/${id1}/diff?compare_with=${id2}`, {
                 target: '#modal-content', 
                 swap: 'innerHTML'
