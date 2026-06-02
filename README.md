@@ -50,3 +50,7 @@ There is no need for manual database setup.
 2.  **Add Commands**: Define backup commands (e.g., `show running-config` for Cisco IOS).
 3.  **Add Devices**: Register your network devices and assign credentials.
 4.  **Run Backup**: Go to "Backups" and trigger a backup manually, or set up a Schedule.
+
+## License
+
+MIT
