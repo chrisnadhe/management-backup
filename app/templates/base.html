@@ -142,6 +142,21 @@
                 }
             });
 
+            // Check for URL query params to show toast notifications on full page load
+            document.addEventListener('DOMContentLoaded', function() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const msg = urlParams.get('msg');
+                const error = urlParams.get('error');
+                
+                if (msg) {
+                    showToast(msg, 'success');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else if (error) {
+                    showToast(error, 'error');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            });
+
             window.htmxListenersRegistered = true;
         }
     </script>

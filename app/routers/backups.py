@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Form, Request, BackgroundTasks, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse, StreamingResponse
 from sqlmodel import Session, select, col, func
 from app.database import SessionDep
 from app.models import BackupLog, Device, DeviceGroup, Command
@@ -243,3 +243,57 @@ async def download_backup(log_id: int, session: Session = SessionDep):
     if log and log.file_path:
         return FileResponse(log.file_path, filename=os.path.basename(log.file_path))
     return {"error": "File not found"}
+
+@router.get("/download/group/{group_id}")
+async def download_group_backups(group_id: int, session: Session = SessionDep):
+    import zipfile
+    import io
+    from datetime import datetime
+    
+    group = session.get(DeviceGroup, group_id)
+    if not group:
+        return RedirectResponse(url="/backups?error=Group not found", status_code=303)
+        
+    devices = group.devices
+    if not devices:
+        return RedirectResponse(url=f"/backups?error=Group '{group.name}' has no devices.", status_code=303)
+        
+    # Find the latest successful backup with a configuration file for each device
+    backup_files = []
+    for device in devices:
+        latest_success = session.exec(
+            select(BackupLog)
+            .where(BackupLog.device_id == device.id)
+            .where(BackupLog.status == "success")
+            .where(BackupLog.file_path != None)
+            .order_by(BackupLog.timestamp.desc())
+            .limit(1)
+        ).first()
+        
+        if latest_success and latest_success.file_path and os.path.exists(latest_success.file_path):
+            backup_files.append((device.hostname, latest_success.file_path))
+            
+    if not backup_files:
+        return RedirectResponse(
+            url=f"/backups?error=No successful configuration backups found for devices in group '{group.name}'.", 
+            status_code=303
+        )
+        
+    # Create zip archive in memory
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        for hostname, file_path in backup_files:
+            # Save file inside archive named by its device hostname
+            arcname = f"{hostname}_{os.path.basename(file_path)}"
+            zip_file.write(file_path, arcname=arcname)
+            
+    zip_buffer.seek(0)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"backups_{group.name}_{timestamp}.zip"
+    
+    headers = {
+        "Content-Disposition": f"attachment; filename={filename}"
+    }
+    return StreamingResponse(zip_buffer, media_type="application/x-zip-compressed", headers=headers)
+

@@ -15,6 +15,10 @@
                     <td class="py-4 px-6 text-slate-500">{{ group.description or '-' }}</td>
                     <td class="py-4 px-6 text-right whitespace-nowrap">
                         <div class="inline-flex gap-2">
+                            <a href="/backups/download/group/{{ group.id }}"
+                                class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-1.5 px-3 rounded-lg text-xs border border-indigo-100/50 shadow-sm transition-all">
+                                <i class="fas fa-file-zipper text-[10px]"></i> Bulk Download
+                            </a>
                             <button onclick="openBackupModal('{{ group.id }}', '{{ group.name }}')"
                                 class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs shadow-sm hover:shadow-emerald-600/20 transition-all">
                                 <i class="fas fa-play text-[10px]"></i> Group Backup
