@@ -27,6 +27,8 @@ class Device(SQLModel, table=True):
     device_type: str = Field(default="cisco_ios") # netmiko device_type
     credential_id: Optional[int] = Field(default=None, foreign_key="credential.id")
     group_id: Optional[int] = Field(default=None, foreign_key="devicegroup.id")
+    last_status: Optional[str] = None
+    last_status_time: Optional[datetime] = None
     
     credential: Optional[Credential] = Relationship(back_populates="devices")
     group: Optional[DeviceGroup] = Relationship(back_populates="devices")

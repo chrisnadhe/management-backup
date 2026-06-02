@@ -298,10 +298,19 @@ async def test_connection(
     else:
         badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200"><i class="fas fa-circle text-[6px] mr-1.5"></i>Offline</span>'
         toast_type = 'error'
+        
+    device = session.get(Device, device_id)
+    if device:
+        from datetime import datetime, timezone
+        device.last_status = status
+        device.last_status_time = datetime.now(timezone.utc)
+        session.add(device)
+        session.commit()
 
     if request.headers.get('HX-Request'):
         response = HTMLResponse(badge)
-        response.headers['HX-Trigger'] = f'{{"showToast": {{"message": "{message}", "type": "{toast_type}"}}}}'
+        import json
+        response.headers['HX-Trigger'] = json.dumps({"showToast": {"message": message, "type": toast_type}})
         return response
     return RedirectResponse(url='/devices', status_code=303)
 
