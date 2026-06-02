@@ -411,8 +411,8 @@ async def diff_backup(log_id: int, compare_with: int, session: Session = Session
         </div>
     </div>
     <script>
-        document.getElementById('modal-content').parentElement.classList.remove('max-w-xl');
-        document.getElementById('modal-content').parentElement.classList.add('max-w-5xl');
+        document.getElementById('modal-content').classList.remove('max-w-xl');
+        document.getElementById('modal-content').classList.add('max-w-5xl');
     </script>'''
     return HTMLResponse(result_html)
 
