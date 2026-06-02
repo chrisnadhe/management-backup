@@ -1,6 +1,6 @@
 """
 Modul autentikasi session-based untuk Network Backup Manager.
-Menggunakan itsdangerous untuk signed cookie + passlib[bcrypt] untuk hash password.
+Menggunakan itsdangerous untuk signed cookie + raw bcrypt (menggantikan passlib).
 """
 from datetime import datetime, timezone
 from typing import Optional
@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from itsdangerous import TimestampSigner, BadSignature, SignatureExpired
-from passlib.context import CryptContext
+import bcrypt
 from sqlmodel import Session, select
 
 from app.config import settings
@@ -18,9 +18,6 @@ from app.models import User, UserRole
 
 logger = get_logger(__name__)
 
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # Session cookie name
 SESSION_COOKIE = "nbm_session"
 
@@ -28,11 +25,23 @@ SESSION_COOKIE = "nbm_session"
 # ── Password helpers ────────────────────────────────────────────────────────────
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    """Hash password menggunakan bcrypt murni (max 72 bytes)."""
+    encoded = plain.encode('utf-8')
+    if len(encoded) > 72:
+        encoded = encoded[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(encoded, salt).decode('utf-8')
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    """Verifikasi password dengan bcrypt murni."""
+    encoded = plain.encode('utf-8')
+    if len(encoded) > 72:
+        encoded = encoded[:72]
+    try:
+        return bcrypt.checkpw(encoded, hashed.encode('utf-8'))
+    except ValueError:
+        return False
 
 
 # ── Session helpers ─────────────────────────────────────────────────────────────
