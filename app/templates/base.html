@@ -166,80 +166,95 @@
 
     <!-- Premium Navbar -->
     <nav class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
+                
                 <!-- Logo & Brand -->
-                <div class="flex items-center">
+                <div class="flex items-center flex-shrink-0 mr-4 lg:mr-8">
                     <a href="/" class="flex items-center gap-2.5 text-white font-extrabold text-xl tracking-tight hover:opacity-95 transition-all">
                         <div class="bg-indigo-600 p-2 rounded-xl shadow-md shadow-indigo-600/30 flex items-center justify-center">
                             <i class="fas fa-shield-halved text-sm text-white"></i>
                         </div>
-                        <span>NetBackup</span>
+                        <span class="hidden sm:block">NetBackup</span>
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-1.5 font-medium">
+                <div class="hidden md:flex flex-1 justify-center items-center">
+                    <div class="flex items-center space-x-1 lg:space-x-1.5 font-medium">
                         {% set current_path = request.url.path %}
                         
-                        <a href="/" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path == '/' %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-tachometer-alt mr-1.5 opacity-70"></i> Dashboard
+                        <a href="/" title="Dashboard" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path == '/' %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-tachometer-alt opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Dashboard</span>
                         </a>
-                        <a href="/devices" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/devices') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-server mr-1.5 opacity-70"></i> Devices
+                        <a href="/devices" title="Devices" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/devices') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-server opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Devices</span>
                         </a>
-                        <a href="/groups" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/groups') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-layer-group mr-1.5 opacity-70"></i> Groups
+                        <a href="/groups" title="Groups" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/groups') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-layer-group opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Groups</span>
                         </a>
-                        <a href="/credentials" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/credentials') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-key mr-1.5 opacity-70"></i> Credentials
+                        <a href="/credentials" title="Credentials" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/credentials') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-key opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Credentials</span>
                         </a>
-                        <a href="/commands" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/commands') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-terminal mr-1.5 opacity-70"></i> Commands
+                        <a href="/commands" title="Commands" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/commands') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-terminal opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Commands</span>
                         </a>
-                        <a href="/schedules" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/schedules') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-calendar-alt mr-1.5 opacity-70"></i> Schedules
+                        <a href="/schedules" title="Schedules" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/schedules') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-calendar-alt opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Schedules</span>
                         </a>
-                        <a href="/backups" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/backups') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-history mr-1.5 opacity-70"></i> Backups
+                        <a href="/backups" title="Backups" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/backups') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-history opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Backups</span>
                         </a>
-                        <a href="/logs" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/logs') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-file-alt mr-1.5 opacity-70"></i> Logs
+                        <a href="/logs" title="Logs" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/logs') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-file-alt opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Logs</span>
                         </a>
-                         <a href="/push" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/push') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-paper-plane mr-1.5 opacity-70"></i> Push Config
+                        <a href="/push" title="Push Config" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/push') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-paper-plane opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Push</span>
                         </a>
+                        
                         {% if is_admin %}
-                        <a href="/users" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/users') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-users-cog mr-1.5 opacity-70"></i> Users
+                        <div class="h-5 w-px bg-slate-700/60 mx-1 lg:mx-2 self-center"></div>
+                        <a href="/users" title="Users" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/users') %}bg-indigo-600/20 text-indigo-300 shadow-inner border border-indigo-500/20{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-users-cog opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Users</span>
                         </a>
-                        <a href="/settings" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/settings') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
-                            <i class="fas fa-cog mr-1.5 opacity-70"></i> Settings
+                        <a href="/settings" title="Settings" class="px-2.5 lg:px-3 py-1.5 rounded-lg text-sm transition-all duration-200 flex items-center {% if current_path.startswith('/settings') %}bg-indigo-600/20 text-indigo-300 shadow-inner border border-indigo-500/20{% else %}text-slate-400 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-cog opacity-80"></i>
+                            <span class="hidden xl:inline ml-2">Settings</span>
                         </a>
                         {% endif %}
                     </div>
                 </div>
-            </div>
 
-                <!-- User Info & Logout -->
-                <div class="hidden md:flex items-center gap-3">
+                <!-- Right Section: User Info & Logout -->
+                <div class="flex items-center justify-end gap-3 ml-auto lg:ml-8 flex-shrink-0">
                     {% if current_user %}
                     <!-- User Badge -->
-                    <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700">
-                        <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
-                            <span class="text-white text-[10px] font-bold">{{ current_user.username[0]|upper }}</span>
+                    <div class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 transition-all cursor-default">
+                        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <span class="text-white text-xs font-bold">{{ current_user.username[0]|upper }}</span>
                         </div>
-                        <div class="leading-none">
+                        <div class="leading-none pr-1 hidden sm:block text-left">
                             <p class="text-white text-xs font-semibold">{{ current_user.username }}</p>
-                            <p class="text-[10px] mt-0.5 {% if current_user.role == 'admin' %}text-indigo-400{% else %}text-slate-400{% endif %} capitalize">{{ current_user.role }}</p>
+                            <p class="text-[10px] mt-0.5 {% if current_user.role == 'admin' %}text-indigo-400{% else %}text-slate-400{% endif %} capitalize font-medium">{{ current_user.role }}</p>
                         </div>
                     </div>
-                    <a href="/logout" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all border border-transparent hover:border-slate-700">
-                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    <a href="/logout" class="w-8 h-8 lg:w-auto lg:h-auto flex items-center justify-center lg:px-3 lg:py-1.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-rose-500/10 hover:text-rose-400 transition-all border border-transparent hover:border-rose-500/20" title="Logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="hidden lg:inline ml-2 text-xs font-semibold">Logout</span>
                     </a>
                     {% endif %}
                 </div>
+
             </div>
         </div>
     </nav>
