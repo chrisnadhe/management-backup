@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- Page Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Settings</h1>
+            <p class="text-slate-500 text-sm mt-1">Konfigurasi aplikasi (read-only — ubah via file .env)</p>
+        </div>
+        <form method="post" action="/settings/retention/cleanup">
+            <button type="submit"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-rose-600 text-white text-sm font-semibold rounded-xl hover:bg-rose-700 transition-all shadow-sm">
+                <i class="fas fa-broom"></i> Run Cleanup Now
+            </button>
+        </form>
+    </div>
+
+    <!-- Settings Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Backup Retention -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-100 rounded-xl">
+                    <i class="fas fa-archive text-indigo-600"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">Backup Retention</h2>
+                    <p class="text-xs text-slate-500">Simpan N backup terbaru ATAU dalam X hari</p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-sm text-slate-600">Retention Days</span>
+                    <span class="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{{ current_settings.backup_retention_days }} days</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-sm text-slate-600">Retention Count</span>
+                    <span class="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{{ current_settings.backup_retention_count }} backups/device</span>
+                </div>
+                <div class="flex items-center justify-between py-2">
+                    <span class="text-sm text-slate-600">Backup Directory</span>
+                    <span class="font-mono text-xs font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{{ current_settings.backup_dir }}/</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Network Settings -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-emerald-100 rounded-xl">
+                    <i class="fas fa-network-wired text-emerald-600"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">Network & Performance</h2>
+                    <p class="text-xs text-slate-500">Netmiko dan thread pool settings</p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-sm text-slate-600">Netmiko Delay Factor</span>
+                    <span class="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{{ current_settings.netmiko_delay_factor }}x</span>
+                </div>
+                <div class="flex items-center justify-between py-2">
+                    <span class="text-sm text-slate-600">Max Workers (Thread Pool)</span>
+                    <span class="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">{{ current_settings.max_workers }} threads</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Settings -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-amber-100 rounded-xl">
+                    <i class="fas fa-user-shield text-amber-600"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">Session & Auth</h2>
+                    <p class="text-xs text-slate-500">Konfigurasi sesi login</p>
+                </div>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between py-2">
+                    <span class="text-sm text-slate-600">Session Max Age</span>
+                    <span class="font-mono text-sm font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        {{ (current_settings.session_max_age // 3600) }}h
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6 space-y-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-100 rounded-xl">
+                    <i class="fas fa-info-circle text-indigo-600"></i>
+                </div>
+                <h2 class="text-base font-bold text-indigo-800">Cara Mengubah Config</h2>
+            </div>
+            <p class="text-sm text-indigo-700">
+                Ubah nilai konfigurasi di file <code class="font-mono bg-indigo-100 px-1.5 py-0.5 rounded text-xs">.env</code> 
+                di root project, lalu restart server.
+            </p>
+            <div class="bg-indigo-900 rounded-xl p-3 font-mono text-xs text-indigo-200 space-y-1">
+                <div>BACKUP_RETENTION_DAYS=30</div>
+                <div>BACKUP_RETENTION_COUNT=10</div>
+                <div>MAX_WORKERS=5</div>
+                <div>NETMIKO_DELAY_FACTOR=4</div>
+            </div>
+            <p class="text-xs text-indigo-600">
+                <i class="fas fa-clock mr-1"></i>Retention cleanup otomatis berjalan setiap hari jam 03:00.
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -52,6 +52,116 @@ async def push_dashboard(
     return templates.TemplateResponse("push.html", context)
 
 
+@router.post("/preview", response_class=HTMLResponse)
+async def push_preview(
+    request: Request,
+    target_type: str = Form(...),
+    target_id: int = Form(...),
+    commands_text: str = Form(...),
+    command_id: int = Form(None),
+    session: Session = SessionDep,
+):
+    """Tampilkan modal konfirmasi sebelum push dieksekusi."""
+    import html as html_lib
+
+    if not commands_text or not commands_text.strip():
+        response = HTMLResponse("")
+        response.headers["HX-Trigger"] = '{"showToast": {"message": "Commands tidak boleh kosong!", "type": "error"}}'
+        return response
+
+    # Dapatkan info target
+    target_name = ""
+    device_count = 0
+    if target_type == "device":
+        device = session.get(Device, target_id)
+        if not device:
+            response = HTMLResponse("")
+            response.headers["HX-Trigger"] = '{"showToast": {"message": "Device tidak ditemukan!", "type": "error"}}'
+            return response
+        target_name = f"{device.hostname} ({device.ip_address})"
+        device_count = 1
+    elif target_type == "group":
+        group = session.get(DeviceGroup, target_id)
+        if not group:
+            response = HTMLResponse("")
+            response.headers["HX-Trigger"] = '{"showToast": {"message": "Group tidak ditemukan!", "type": "error"}}'
+            return response
+        target_name = f"Group: {group.name}"
+        device_count = len(group.devices) if group.devices else 0
+
+    # Render preview commands
+    commands_escaped = html_lib.escape(commands_text.strip())
+    cmd_lines_html = "".join(
+        f'<div class="flex items-start gap-2"><span class="text-indigo-400 select-none">$</span><span class="text-slate-200">{html_lib.escape(line.strip())}</span></div>'
+        for line in commands_text.splitlines()
+        if line.strip()
+    )
+
+    modal_html = f"""
+    <div class="space-y-5">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 rounded-xl bg-rose-100">
+                <i class="fas fa-exclamation-triangle text-rose-600 text-lg"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">Konfirmasi Push Config</h3>
+                <p class="text-sm text-slate-500">Tindakan ini akan langsung mengeksekusi perintah ke device production.</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500">Target</span>
+                <span class="font-semibold text-slate-800">{html_lib.escape(target_name)}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500">Jumlah Device</span>
+                <span class="font-bold text-rose-600">{device_count} device(s)</span>
+            </div>
+        </div>
+
+        <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Commands yang akan dieksekusi:</p>
+            <div class="bg-slate-900 rounded-xl p-4 space-y-1 max-h-40 overflow-y-auto font-mono text-xs">
+                {cmd_lines_html}
+            </div>
+        </div>
+
+        <div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+            <p class="text-xs text-rose-700 font-medium">
+                <i class="fas fa-shield-alt mr-1.5"></i>
+                Ketik <strong>CONFIRM</strong> di bawah untuk mengaktifkan tombol eksekusi.
+            </p>
+        </div>
+
+        <div>
+            <input type="text" id="confirm-input" placeholder="Ketik CONFIRM untuk lanjut..."
+                class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
+                oninput="document.getElementById('confirm-push-btn').disabled = this.value !== 'CONFIRM'">
+        </div>
+
+        <form hx-post="/push/run" hx-target="body" hx-swap="none">
+            <input type="hidden" name="target_type" value="{html_lib.escape(target_type)}">
+            <input type="hidden" name="target_id" value="{target_id}">
+            <input type="hidden" name="commands_text" value="{html_lib.escape(commands_text)}">
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeModal()"
+                    class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors">
+                    Batal
+                </button>
+                <button type="submit" id="confirm-push-btn" disabled
+                    class="px-5 py-2 bg-rose-600 text-white rounded-xl text-sm font-bold hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    hx-on:htmx:after-request="closeModal()">
+                    <i class="fas fa-paper-plane mr-1.5"></i>Eksekusi Push
+                </button>
+            </div>
+        </form>
+    </div>
+    """
+    return HTMLResponse(modal_html)
+
+
+
 @router.post("/run")
 async def trigger_push(
     background_tasks: BackgroundTasks,

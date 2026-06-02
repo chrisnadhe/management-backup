@@ -1,0 +1,131 @@
+<div id="users-table-container" class="space-y-4">
+
+    <!-- Table -->
+    <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                    <th scope="col" class="py-4 px-6 text-left">Username</th>
+                    <th scope="col" class="py-4 px-6 text-left">Role</th>
+                    <th scope="col" class="py-4 px-6 text-left">Status</th>
+                    <th scope="col" class="py-4 px-6 text-left">Created At</th>
+                    <th scope="col" class="py-4 px-6 text-left">Last Login</th>
+                    {% if is_admin %}
+                    <th scope="col" class="py-4 px-6 text-right">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
+                {% for user in users %}
+                <tr id="user-row-{{ user.id }}" class="hover:bg-slate-50/80 transition-colors">
+                    <!-- Username -->
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                                <span class="text-indigo-700 font-bold text-xs uppercase">
+                                    {{ user.username[0] }}
+                                </span>
+                            </div>
+                            <span class="font-semibold text-slate-900">{{ user.username }}</span>
+                            {% if current_user and current_user.username == user.username %}
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500">
+                                You
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <!-- Role Badge -->
+                    <td class="py-4 px-6">
+                        {% if user.role == 'admin' %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200/60">
+                            <i class="fas fa-crown text-[9px]"></i> Admin
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200/60">
+                            <i class="fas fa-user text-[9px]"></i> User
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Status Badge -->
+                    <td class="py-4 px-6">
+                        {% if user.is_active %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                            Active
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/60">
+                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block"></span>
+                            Inactive
+                        </span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Created At -->
+                    <td class="py-4 px-6 text-slate-500">
+                        {% if user.created_at %}
+                        <span class="font-mono text-xs">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '—' }}</span>
+                        {% else %}
+                        <span class="text-slate-400 italic text-xs">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Last Login -->
+                    <td class="py-4 px-6 text-slate-500">
+                        {% if user.last_login %}
+                        <span class="font-mono text-xs">{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '—' }}</span>
+                        {% else %}
+                        <span class="text-slate-400 italic text-xs">Never</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    {% if is_admin %}
+                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                        <div class="inline-flex gap-2">
+                            <button
+                                hx-get="/users/{{ user.id }}/edit"
+                                hx-target="#modal-content"
+                                hx-swap="innerHTML"
+                                class="inline-flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-700 font-medium py-1.5 px-3 rounded-lg text-xs border border-slate-200 hover:border-slate-300 transition-all">
+                                <i class="fas fa-edit text-[10px] text-slate-400"></i> Edit
+                            </button>
+                            {% if not (current_user and current_user.username == user.username) %}
+                            <button
+                                hx-get="/users/{{ user.id }}/delete/confirm"
+                                hx-target="#modal-content"
+                                hx-swap="innerHTML"
+                                class="inline-flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium py-1.5 px-3 rounded-lg text-xs border border-rose-100 hover:border-rose-200 transition-all">
+                                <i class="fas fa-trash-alt text-[10px] text-rose-400"></i> Delete
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ '6' if is_admin else '5' }}" class="py-12 px-6 text-center text-slate-400 italic bg-white">
+                        <div class="flex flex-col items-center gap-2">
+                            <i class="fas fa-users text-3xl text-slate-300"></i>
+                            <span>No users found.</span>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Summary row -->
+    {% if users %}
+    <div class="flex items-center justify-between py-1">
+        <div class="text-xs text-slate-500 font-medium">
+            {{ users | length }} user{{ 's' if users | length != 1 else '' }} total
+        </div>
+    </div>
+    {% endif %}
+
+</div>

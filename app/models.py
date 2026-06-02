@@ -1,3 +1,4 @@
+import enum
 from typing import Optional, List
 from datetime import datetime, timezone
 from sqlmodel import Field, SQLModel, Relationship
@@ -94,3 +95,28 @@ class PushSchedule(SQLModel, table=True):
     push_logs: List[PushLog] = Relationship(back_populates="schedule")
     device: Optional[Device] = Relationship(back_populates="push_schedules")
     group: Optional[DeviceGroup] = Relationship()
+
+
+# ── Auth Models ────────────────────────────────────────────────────────────────
+
+class UserRole(str, enum.Enum):
+    admin = "admin"
+    user = "user"
+
+
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(index=True, unique=True)
+    hashed_password: str
+    role: UserRole = Field(default=UserRole.user)
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_login: Optional[datetime] = None
+
+
+class AppSetting(SQLModel, table=True):
+    """Key-value store untuk konfigurasi aplikasi yang bisa diubah via UI."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    key: str = Field(index=True, unique=True)
+    value: str
+    description: Optional[str] = None

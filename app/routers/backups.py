@@ -1,3 +1,4 @@
+import difflib
 import io
 import os
 import zipfile
@@ -291,6 +292,152 @@ async def download_group_backups(group_id: int, session: Session = SessionDep):
     filename = f"backups_{group.name}_{timestamp}.zip"
     headers = {"Content-Disposition": f"attachment; filename={filename}"}
     return StreamingResponse(zip_buffer, media_type="application/x-zip-compressed", headers=headers)
+
+
+# Preview backup file content
+@router.get("/{log_id}/preview", response_class=HTMLResponse)
+async def preview_backup(log_id: int, session: Session = SessionDep):
+    log = session.get(BackupLog, log_id)
+    if not log or not log.file_path or not os.path.exists(log.file_path):
+        return HTMLResponse('<p class="text-slate-400 text-sm">File tidak tersedia.</p>')
+    with open(log.file_path, 'r', errors='replace') as f:
+        content = f.read()
+    # Return modal HTML with pre-formatted content
+    import html as html_lib
+    html = f'''<div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-800">Backup Preview</h3>
+            <span class="text-xs text-slate-500">{os.path.basename(log.file_path)}</span>
+        </div>
+        <pre class="text-xs font-mono text-slate-300 bg-slate-900 p-4 rounded-xl border border-slate-700 max-h-96 overflow-auto whitespace-pre-wrap break-all">{html_lib.escape(content)}</pre>
+        <div class="flex justify-end">
+            <a href="/backups/download/{log_id}" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700">Download</a>
+        </div>
+    </div>'''
+    return HTMLResponse(html)
+
+
+# Diff between two backup versions
+@router.get("/{log_id}/diff", response_class=HTMLResponse)
+async def diff_backup(log_id: int, compare_with: int, session: Session = SessionDep):
+    import html as html_lib
+    log1 = session.get(BackupLog, log_id)
+    log2 = session.get(BackupLog, compare_with)
+
+    if not log1 or not log2:
+        return HTMLResponse('<p class="text-red-500 text-sm">Log tidak ditemukan.</p>')
+
+    content1 = ''
+    content2 = ''
+    if log1.file_path and os.path.exists(log1.file_path):
+        with open(log1.file_path, 'r', errors='replace') as f:
+            content1 = f.read()
+    if log2.file_path and os.path.exists(log2.file_path):
+        with open(log2.file_path, 'r', errors='replace') as f:
+            content2 = f.read()
+
+    lines1 = content1.splitlines()
+    lines2 = content2.splitlines()
+
+    # Generate side-by-side diff rows
+    matcher = difflib.SequenceMatcher(None, lines1, lines2)
+    rows = []
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == 'equal':
+            for l in lines1[i1:i2]:
+                rows.append(('equal', l, l))
+        elif tag == 'replace':
+            for l, r in zip(lines1[i1:i2], lines2[j1:j2]):
+                rows.append(('replace', l, r))
+            for l in lines1[i1+len(lines2[j1:j2]):i2]:
+                rows.append(('delete', l, ''))
+            for r in lines2[j1+len(lines1[i1:i2]):j2]:
+                rows.append(('insert', '', r))
+        elif tag == 'delete':
+            for l in lines1[i1:i2]:
+                rows.append(('delete', l, ''))
+        elif tag == 'insert':
+            for r in lines2[j1:j2]:
+                rows.append(('insert', '', r))
+
+    # Build HTML table
+    table_rows = ''
+    for tag, left, right in rows:
+        if tag == 'equal':
+            bg = ''
+            left_cls = 'text-slate-400'
+            right_cls = 'text-slate-400'
+        elif tag == 'replace':
+            bg = 'bg-amber-950/40'
+            left_cls = 'text-amber-300'
+            right_cls = 'text-emerald-300'
+        elif tag == 'delete':
+            bg = 'bg-rose-950/40'
+            left_cls = 'text-rose-300'
+            right_cls = ''
+        else:  # insert
+            bg = 'bg-emerald-950/40'
+            left_cls = ''
+            right_cls = 'text-emerald-300'
+
+        table_rows += f'<tr class="{bg}"><td class="px-2 py-0.5 font-mono text-xs {left_cls} border-r border-slate-700 w-1/2 whitespace-pre">{html_lib.escape(left)}</td><td class="px-2 py-0.5 font-mono text-xs {right_cls} w-1/2 whitespace-pre">{html_lib.escape(right)}</td></tr>'
+
+    fname1 = os.path.basename(log1.file_path) if log1.file_path else 'N/A'
+    fname2 = os.path.basename(log2.file_path) if log2.file_path else 'N/A'
+
+    result_html = f'''<div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-slate-800">Backup Diff</h3>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5 text-rose-700 font-mono truncate">{html_lib.escape(fname1)}</div>
+            <div class="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-1.5 text-emerald-700 font-mono truncate">{html_lib.escape(fname2)}</div>
+        </div>
+        <div class="overflow-auto max-h-[60vh] rounded-xl border border-slate-700">
+            <table class="w-full bg-slate-900">
+                <thead><tr>
+                    <th class="px-2 py-1.5 text-left text-xs text-slate-400 border-r border-slate-700 w-1/2">Lama</th>
+                    <th class="px-2 py-1.5 text-left text-xs text-slate-400 w-1/2">Baru</th>
+                </tr></thead>
+                <tbody>{table_rows}</tbody>
+            </table>
+        </div>
+    </div>'''
+    return HTMLResponse(result_html)
+
+
+# Bulk backup
+@router.post("/run/bulk")
+async def trigger_bulk_backup(
+    background_tasks: BackgroundTasks,
+    request: Request,
+    device_ids: list[int] = Form(...),
+    command_id: int = Form(None),
+    session: Session = SessionDep
+):
+    log_ids = []
+    for device_id in device_ids:
+        device = session.get(Device, device_id)
+        if not device:
+            continue
+        backup_log = BackupLog(
+            device_id=device_id,
+            status='running',
+            timestamp=datetime.now(timezone.utc),
+            log_output='Bulk backup queued...',
+        )
+        session.add(backup_log)
+        session.commit()
+        session.refresh(backup_log)
+        background_tasks.add_task(run_backup, device_id, backup_log.id, command_id)
+        log_ids.append(backup_log.id)
+
+    msg = f'Bulk backup started for {len(log_ids)} device(s).'
+    if request.headers.get('HX-Request'):
+        response = HTMLResponse('')
+        response.headers['HX-Trigger'] = f'{{"refreshList": "", "showToast": {{"message": "{msg}", "type": "info"}}}}'
+        return response
+    return RedirectResponse(url=f'/backups?msg={msg}', status_code=303)
 
 
 @router.get("/{log_id}/delete/confirm", response_class=HTMLResponse)

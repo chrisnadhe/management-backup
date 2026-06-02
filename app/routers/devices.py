@@ -3,13 +3,14 @@ import io
 import ipaddress
 import os
 
-from fastapi import APIRouter, Form, Request, UploadFile, File, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Form, Request, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from sqlmodel import Session, select, col, func
 
 from app.database import SessionDep
 from app.logging_config import get_logger
 from app.models import Device, Credential, DeviceGroup, Command
+from app.services.connectivity_service import test_device_connection
 from app.templates import templates
 
 logger = get_logger(__name__)
@@ -274,6 +275,35 @@ async def update_device(
         return response
 
     return RedirectResponse(url="/devices", status_code=303)
+
+
+@router.post("/{device_id}/test", response_class=HTMLResponse)
+async def test_connection(
+    device_id: int,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    session: Session = SessionDep
+):
+    # Run synchronously for immediate response (with timeout)
+    result = test_device_connection(device_id)
+    status = result['status']
+    message = result['message']
+
+    if status == 'online':
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fas fa-circle text-[6px] mr-1.5"></i>Online</span>'
+        toast_type = 'success'
+    elif status == 'auth_error':
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200"><i class="fas fa-circle text-[6px] mr-1.5"></i>Auth Error</span>'
+        toast_type = 'error'
+    else:
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200"><i class="fas fa-circle text-[6px] mr-1.5"></i>Offline</span>'
+        toast_type = 'error'
+
+    if request.headers.get('HX-Request'):
+        response = HTMLResponse(badge)
+        response.headers['HX-Trigger'] = f'{{"showToast": {{"message": "{message}", "type": "{toast_type}"}}}}'
+        return response
+    return RedirectResponse(url='/devices', status_code=303)
 
 
 @router.get("/{device_id}/delete/confirm", response_class=HTMLResponse)

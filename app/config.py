@@ -8,14 +8,22 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    # Security
+    # Credential encryption
     secret_key: str
+
+    # Session auth
+    session_secret_key: str = "change-me-in-production-32-chars!!"
+    session_max_age: int = 86400  # 24 jam dalam detik
 
     # Database
     db_url: str = "sqlite:///network_backup.db"
 
     # Backup
     backup_dir: str = "backups"
+
+    # Backup retention
+    backup_retention_days: int = 30    # Hapus jika lebih tua dari X hari
+    backup_retention_count: int = 10   # Atau simpan N terbaru per device
 
     # Netmiko
     netmiko_delay_factor: int = 4

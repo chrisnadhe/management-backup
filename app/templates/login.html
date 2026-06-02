@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — NetBackup Manager</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Outfit Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        indigo: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Outfit', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .input-field {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            transition: all 0.2s ease;
+        }
+        .input-field::placeholder { color: rgba(255,255,255,0.35); }
+        .input-field:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(99, 102, 241, 0.7);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        /* Subtle animated gradient orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.18;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center antialiased relative overflow-hidden"
+      style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);">
+
+    <!-- Decorative orbs -->
+    <div class="orb w-96 h-96 bg-indigo-600 top-[-8rem] left-[-6rem]"></div>
+    <div class="orb w-80 h-80 bg-indigo-400 bottom-[-6rem] right-[-4rem]"></div>
+    <div class="orb w-64 h-64 bg-slate-500 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+
+    <!-- Login Card -->
+    <div class="relative z-10 w-full max-w-md mx-4">
+        <div class="glass-card rounded-2xl shadow-2xl p-8">
+
+            <!-- Brand Logo -->
+            <div class="flex flex-col items-center mb-8">
+                <div class="bg-indigo-600 p-3.5 rounded-2xl shadow-lg shadow-indigo-600/40 mb-4 flex items-center justify-center">
+                    <i class="fas fa-shield-halved text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-extrabold text-white tracking-tight">NetBackup Manager</h1>
+                <p class="text-slate-400 text-sm mt-1 font-medium">Sign in to your account</p>
+            </div>
+
+            <!-- Error Alert -->
+            {% if error %}
+            <div class="mb-5 flex items-start gap-3 bg-rose-500/15 border border-rose-500/30 rounded-xl px-4 py-3">
+                <i class="fas fa-circle-exclamation text-rose-400 mt-0.5 flex-shrink-0"></i>
+                <p class="text-rose-300 text-sm font-medium leading-snug">{{ error }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form method="post" action="/auth/login" class="space-y-4">
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Username
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i class="fas fa-user text-slate-500 text-sm"></i>
+                        </div>
+                        <input
+                            id="username"
+                            name="username"
+                            type="text"
+                            autocomplete="username"
+                            required
+                            placeholder="Enter your username"
+                            class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium"
+                        >
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i class="fas fa-lock text-slate-500 text-sm"></i>
+                        </div>
+                        <input
+                            id="password"
+                            name="password"
+                            type="password"
+                            autocomplete="current-password"
+                            required
+                            placeholder="••••••••"
+                            class="input-field w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium"
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="pt-2">
+                    <button
+                        type="submit"
+                        class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-xl shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/40 transition-all duration-200 text-sm tracking-wide flex items-center justify-center gap-2"
+                    >
+                        <i class="fas fa-arrow-right-to-bracket"></i>
+                        Sign In
+                    </button>
+                </div>
+            </form>
+
+            <!-- Footer note -->
+            <p class="mt-6 text-center text-xs text-slate-600 font-medium">
+                &copy; 2026 NetBackup Manager &bull; Secure Network Backup
+            </p>
+        </div>
+    </div>
+
+</body>
+
+</html>

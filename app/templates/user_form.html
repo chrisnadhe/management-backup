@@ -1,0 +1,161 @@
+{% extends get_base_template(request) %}
+
+{% block content %}
+<div class="{% if request.headers.get('HX-Request') %}w-full{% else %}max-w-lg mx-auto mt-10 glass-panel p-8 rounded-2xl shadow-lg bg-white{% endif %}">
+
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+        <div>
+            <h3 class="text-lg font-bold text-slate-900">
+                {% if user %}Edit User{% else %}Add New User{% endif %}
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">
+                {% if user %}Update account details and permissions.{% else %}Create a new user account.{% endif %}
+            </p>
+        </div>
+        {% if request.headers.get('HX-Request') %}
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-100">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Error Alert -->
+    {% if error %}
+    <div class="mb-5 flex items-start gap-3 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3">
+        <i class="fas fa-circle-exclamation text-rose-500 mt-0.5 flex-shrink-0 text-sm"></i>
+        <p class="text-rose-700 text-sm font-medium leading-snug">{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- User Form -->
+    <form
+        method="post"
+        hx-post="{% if user %}/users/{{ user.id }}/edit{% else %}/users/new{% endif %}"
+        {% if request.headers.get('HX-Request') %}
+        hx-target="#users-table-container"
+        hx-swap="outerHTML"
+        {% endif %}
+        class="space-y-4"
+    >
+        <!-- Username -->
+        <div>
+            <label class="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-2" for="username">
+                Username
+            </label>
+            <input
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium"
+                id="username"
+                name="username"
+                type="text"
+                placeholder="Enter username"
+                value="{{ user.username if user else '' }}"
+                required
+                {% if user %}readonly{% endif %}
+            >
+            {% if user %}
+            <p class="text-[11px] text-slate-400 mt-1.5">Username cannot be changed after creation.</p>
+            {% endif %}
+        </div>
+
+        <!-- Role -->
+        <div>
+            <label class="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-2" for="role">
+                Role
+            </label>
+            <div class="relative">
+                <select
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 pr-8 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm appearance-none"
+                    id="role"
+                    name="role"
+                    required
+                >
+                    <option value="user" {% if user and user.role == 'user' %}selected{% elif not user %}selected{% endif %}>
+                        User — Standard access
+                    </option>
+                    <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>
+                        Admin — Full access
+                    </option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <i class="fas fa-chevron-down text-slate-400 text-xs"></i>
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1.5">
+                Admins can manage devices, credentials, users, and all resources. Users have read-only access to most sections.
+            </p>
+        </div>
+
+        <!-- Is Active (edit mode only) -->
+        {% if user %}
+        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <input
+                type="checkbox"
+                id="is_active"
+                name="is_active"
+                value="true"
+                {% if user.is_active %}checked{% endif %}
+                class="w-4 h-4 rounded accent-indigo-600 cursor-pointer"
+            >
+            <label for="is_active" class="flex flex-col cursor-pointer">
+                <span class="text-sm font-semibold text-slate-700">Active Account</span>
+                <span class="text-[11px] text-slate-400">Inactive users cannot sign in.</span>
+            </label>
+        </div>
+        {% endif %}
+
+        <!-- Password / New Password -->
+        <div>
+            <label class="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-2" for="new_password">
+                {% if user %}New Password <span class="text-slate-400 font-medium normal-case">(leave blank to keep current)</span>{% else %}Password{% endif %}
+            </label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i class="fas fa-lock text-slate-400 text-sm"></i>
+                </div>
+                <input
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm font-mono"
+                    id="new_password"
+                    name="new_password"
+                    type="password"
+                    placeholder="••••••••"
+                    {% if not user %}required{% endif %}
+                    autocomplete="new-password"
+                >
+            </div>
+            {% if not user %}
+            <p class="text-[11px] text-slate-400 mt-1.5">Minimum 8 characters recommended.</p>
+            {% endif %}
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+            {% if request.headers.get('HX-Request') %}
+            <button
+                type="button"
+                onclick="closeModal()"
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-4 rounded-xl border border-slate-200 transition-all text-sm"
+            >
+                Cancel
+            </button>
+            {% else %}
+            <a
+                href="/users"
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-4 rounded-xl border border-slate-200 transition-all text-sm"
+            >
+                Cancel
+            </a>
+            {% endif %}
+            <button
+                type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-xl shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/25 transition-all text-sm flex items-center gap-1.5"
+            >
+                <i class="fas fa-{% if user %}save{% else %}user-plus{% endif %} text-xs"></i>
+                {% if user %}Save Changes{% else %}Create User{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
