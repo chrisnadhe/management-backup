@@ -52,7 +52,7 @@ async def new_user_form(request: Request):
 async def create_user(
     request: Request,
     username: str = Form(...),
-    password: str = Form(...),
+    new_password: str = Form(...),
     role: str = Form(...),
     session: Session = SessionDep,
 ):
@@ -70,7 +70,7 @@ async def create_user(
             **auth_context(request),
         }, status_code=400)
 
-    if len(password) < 8:
+    if len(new_password) < 8:
         return templates.TemplateResponse("user_form.html", {
             "request": request,
             "error": "Password minimal 8 karakter.",
@@ -80,7 +80,7 @@ async def create_user(
 
     user = User(
         username=username,
-        hashed_password=hash_password(password),
+        hashed_password=hash_password(new_password),
         role=UserRole(role),
         is_active=True,
     )
