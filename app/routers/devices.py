@@ -76,7 +76,12 @@ async def import_devices(
 
     content = await file.read()
     decoded = content.decode('utf-8')
-    reader = csv.DictReader(io.StringIO(decoded))
+    
+    # Detect Excel delimiter (comma vs semicolon)
+    first_line = decoded.splitlines()[0] if decoded else ""
+    delimiter = ';' if first_line.count(';') > first_line.count(',') else ','
+    
+    reader = csv.DictReader(io.StringIO(decoded), delimiter=delimiter)
     
     count = 0
     errors = []
