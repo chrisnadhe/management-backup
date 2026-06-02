@@ -125,7 +125,7 @@ async def update_user(
     user_id: int,
     username: str = Form(...),
     role: str = Form(...),
-    is_active: bool = Form(True),
+    is_active: bool = Form(False),  # Fix: Default harus False jika checkbox tidak dicentang
     new_password: str = Form(None),
     session: Session = SessionDep,
 ):
@@ -167,6 +167,35 @@ async def update_user(
         return response
 
     return RedirectResponse(url="/users", status_code=303)
+
+
+@router.get("/{user_id}/delete/confirm", response_class=HTMLResponse)
+async def delete_user_confirm(request: Request, user_id: int, session: Session = SessionDep):
+    result = _require_admin_or_redirect(request)
+    if isinstance(result, RedirectResponse):
+        return result
+
+    user = session.get(User, user_id)
+    if not user:
+        return HTMLResponse('<p class="text-rose-500 text-center py-4">User not found</p>')
+
+    html = f'''<div class="p-6 text-center space-y-6">
+        <div class="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto">
+            <i class="fas fa-exclamation-triangle text-2xl text-rose-600"></i>
+        </div>
+        <div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">Delete User</h3>
+            <p class="text-sm text-slate-500">Are you sure you want to delete user <span class="font-bold text-slate-800">"{user.username}"</span>?</p>
+            <p class="text-xs text-rose-500 mt-2 font-medium">This action cannot be undone.</p>
+        </div>
+        <div class="flex items-center justify-center gap-3 pt-4 border-t border-slate-100">
+            <button onclick="closeModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors">Cancel</button>
+            <button hx-post="/users/{user.id}/delete" hx-target="#users-table-container" hx-swap="outerHTML" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-semibold shadow-lg shadow-rose-600/20 transition-all flex items-center gap-2">
+                <i class="fas fa-trash-alt"></i> Yes, Delete User
+            </button>
+        </div>
+    </div>'''
+    return HTMLResponse(html)
 
 
 @router.post("/{user_id}/delete", response_class=HTMLResponse)
