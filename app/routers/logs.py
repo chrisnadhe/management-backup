@@ -56,7 +56,7 @@ async def view_log(request: Request, log_id: int, session: Session = SessionDep)
     session_content = ""
     if log.session_log_path and os.path.exists(log.session_log_path):
         with open(log.session_log_path, "r", encoding="utf-8", errors="ignore") as f:
-            session_content = f.read()
+            session_content = f.read().strip()
             
     return templates.TemplateResponse("log_view.html", {
         "request": request, 
@@ -73,7 +73,7 @@ async def view_log_content(log_id: int, session: Session = SessionDep):
     session_content = ""
     if log.session_log_path and os.path.exists(log.session_log_path):
         with open(log.session_log_path, "r", encoding="utf-8", errors="ignore") as f:
-            session_content = f.read()
+            session_content = f.read().strip()
             
     if log.status == "running":
         trigger_attr = f'hx-get="/logs/content/{log_id}" hx-trigger="every 2s" hx-swap="outerHTML"'
