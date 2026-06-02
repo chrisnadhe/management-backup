@@ -16,3 +16,6 @@ wheels/
 
 # Backups
 backups/
+
+# Environment — JANGAN commit secret key!
+.env

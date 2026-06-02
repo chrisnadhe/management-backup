@@ -1,9 +1,13 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from sqlmodel import SQLModel, select, func, Session
+
+# Logging — aktifkan sebelum import lain
+from app.logging_config import setup_logging, get_logger
+setup_logging()
+logger = get_logger(__name__)
 
 # Database and Models
 from app.database import engine, SessionDep
@@ -15,16 +19,18 @@ from app.services.scheduler_service import start_scheduler
 # Routers
 from app.routers import devices, groups, credentials, commands, backups, schedules, logs, push
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic
     SQLModel.metadata.create_all(engine)
     start_scheduler()
-    
+    logger.info("Network Backup Manager started")
+
     yield
-    
+
     # Shutdown logic
-    print("Shutting down...")
+    logger.info("Network Backup Manager shutting down...")
 
 # --- App Definition ---
 app = FastAPI(

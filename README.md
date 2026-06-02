@@ -1,55 +1,138 @@
-# Network Management Backup App
+# Network Backup Manager
 
-A comprehensive network configuration backup solution built with FastAPI, HTMX, Tailwind CSS, and Netmiko.
+Aplikasi manajemen backup konfigurasi perangkat jaringan berbasis web, dibangun dengan **FastAPI**, **HTMX**, dan **Netmiko**.
 
-## Features
+## Fitur
 
--   **Device Management**: Add/Edit/Delete network devices (Cisco, Juniper, Arista, etc.).
--   **Credential Management**: Securely manage device credentials.
--   **Command Management**: Define commands to execute for backups.
--   **Automated Backups**: Schedule backups using Cron expressions.
--   **Manual Backups**: Trigger backups on-demand.
--   **Backup History**: View logs and download backup files.
--   **Dashboard**: Overview of system status.
+| Fitur | Keterangan |
+|-------|------------|
+| **Device Management** | Tambah/Edit/Hapus perangkat jaringan (Cisco, MikroTik, Juniper, Arista, dll.) dengan import massal via CSV |
+| **Credential Management** | Manajemen SSH credential terenkripsi (Fernet AES-128) |
+| **Command Templates** | Definisikan command backup per platform (misal `show running-config`) |
+| **Automated Backup** | Jadwalkan backup otomatis menggunakan cron expression |
+| **Manual Backup** | Trigger backup on-demand per device maupun per group |
+| **Config Push** | Push konfigurasi ke device/group secara paralel, dengan opsi penjadwalan |
+| **Backup History** | Lihat log, preview output, dan download file backup |
+| **Group Download** | Download backup seluruh group sebagai file ZIP |
+| **Dashboard** | Ringkasan status sistem dan aktivitas terbaru |
 
-## Prerequisites
+## Prasyarat
 
--   Python 3.12+
--   [UV](https://github.com/astral-sh/uv) (recommended)
+- Python 3.13+
+- [uv](https://github.com/astral-sh/uv) (package manager)
 
-## Installation
+## Instalasi
 
-1.  Clone the repository (or navigate to the directory).
-2.  Install dependencies:
-    ```bash
-    uv sync
-    ```
+### 1. Clone repository
 
-## Running the Application
+```bash
+git clone <repo-url>
+cd management-backup
+```
 
-Start the server using `uv`:
+### 2. Install dependencies
+
+```bash
+uv sync
+```
+
+### 3. Setup environment
+
+```bash
+# Windows
+copy .env.example .env
+
+# Linux/Mac
+cp .env.example .env
+```
+
+Buka `.env` dan isi `SECRET_KEY` dengan Fernet key yang baru digenerate:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+> ⚠️ **Penting:** Jangan ubah `SECRET_KEY` setelah credential sudah tersimpan di database. Jika key hilang, semua credential tidak bisa didekripsi.
+
+## Menjalankan Aplikasi
 
 ```bash
 uv run uvicorn app.main:app --reload
 ```
 
-Access the application at: [http://localhost:8000](http://localhost:8000)
+Buka browser di: [http://localhost:8000](http://localhost:8000)
 
-## Initialization
+## Inisialisasi Pertama Kali
 
-When you run the application for the first time:
+Saat aplikasi pertama kali dijalankan:
 
--   A **SQLite database** (`network_backup.db`) will be automatically created in the root directory.
--   A **`backups/` folder** will be created automatically when the first backup is executed to store configuration files and session logs.
+- **Database SQLite** (`network_backup.db`) dibuat otomatis di root project
+- **Folder `backups/`** dibuat otomatis saat backup pertama dieksekusi
 
-There is no need for manual database setup.
+Tidak ada setup database manual yang diperlukan.
 
-## Usage
+## Cara Penggunaan
 
-1.  **Add Credentials**: Go to "Credentials" and add SSH login details.
-2.  **Add Commands**: Define backup commands (e.g., `show running-config` for Cisco IOS).
-3.  **Add Devices**: Register your network devices and assign credentials.
-4.  **Run Backup**: Go to "Backups" and trigger a backup manually, or set up a Schedule.
+1. **Credentials** → Tambahkan SSH credential (username/password/enable secret)
+2. **Commands** → Definisikan command backup sesuai platform device
+3. **Devices** → Daftarkan perangkat jaringan, assign credential dan group
+4. **Backups** → Jalankan backup manual atau buat jadwal otomatis
+5. **Push Config** → Push konfigurasi ke device/group
+
+## Migrasi (Upgrade dari Versi Lama)
+
+Jika Anda memiliki data credential yang tersimpan **plaintext** (sebelum enkripsi diterapkan), jalankan script migrasi **sekali**:
+
+```bash
+python scripts/migrate_credentials.py
+```
+
+Script ini akan mendeteksi dan mengenkripsi password yang belum terenkripsi secara otomatis.
+
+## Struktur Project
+
+```
+management-backup/
+├── app/
+│   ├── config.py           # Konfigurasi via pydantic-settings (.env)
+│   ├── database.py         # SQLite engine & session
+│   ├── logging_config.py   # Setup Python logging
+│   ├── main.py             # FastAPI app & lifespan
+│   ├── models.py           # SQLModel table definitions
+│   ├── security.py         # Fernet encrypt/decrypt credential
+│   ├── templates.py        # Jinja2 templates setup
+│   ├── routers/            # API route handlers
+│   │   ├── backups.py
+│   │   ├── commands.py
+│   │   ├── credentials.py
+│   │   ├── devices.py
+│   │   ├── groups.py
+│   │   ├── logs.py
+│   │   ├── push.py
+│   │   └── schedules.py
+│   ├── services/           # Business logic
+│   │   ├── base_service.py     # Shared network operation logic
+│   │   ├── backup_service.py   # Backup via Netmiko
+│   │   ├── push_service.py     # Config push via Netmiko
+│   │   └── scheduler_service.py # APScheduler jobs
+│   ├── static/             # CSS, JS, assets
+│   └── templates/          # Jinja2 HTML templates
+├── scripts/
+│   └── migrate_credentials.py  # One-time migration script
+├── backups/                # File backup & session log (auto-generated)
+├── .env                    # Environment config (JANGAN commit!)
+├── .env.example            # Template config untuk onboarding
+└── pyproject.toml
+```
+
+## Stack Teknologi
+
+- **Backend**: FastAPI, SQLModel, APScheduler
+- **Network**: Netmiko
+- **Frontend**: HTMX, Jinja2 Templates
+- **Database**: SQLite
+- **Security**: Cryptography (Fernet)
+- **Config**: pydantic-settings
 
 ## License
 
