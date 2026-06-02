@@ -30,6 +30,7 @@ class Device(SQLModel, table=True):
     credential: Optional[Credential] = Relationship(back_populates="devices")
     group: Optional[DeviceGroup] = Relationship(back_populates="devices")
     backups: List["BackupLog"] = Relationship(back_populates="device")
+    schedules: List["Schedule"] = Relationship(back_populates="device")
 
 class Command(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -39,10 +40,10 @@ class Command(SQLModel, table=True):
 
 class BackupLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    device_id: int = Field(foreign_key="device.id")
+    device_id: Optional[int] = Field(default=None, foreign_key="device.id")
     schedule_id: Optional[int] = Field(default=None, foreign_key="schedule.id")
     status: str # "success", "failed"
-    timestamp: datetime = Field(default_factory=datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     log_output: Optional[str] = None
     file_path: Optional[str] = None
     session_log_path: Optional[str] = None
@@ -62,5 +63,5 @@ class Schedule(SQLModel, table=True):
     last_run: Optional[datetime] = None
     
     backups: List[BackupLog] = Relationship(back_populates="schedule")
-    device: Optional[Device] = Relationship() # Helpful for targeting lookup
+    device: Optional[Device] = Relationship(back_populates="schedules") # Helpful for targeting lookup
     group: Optional[DeviceGroup] = Relationship() # Helpful for targeting lookup

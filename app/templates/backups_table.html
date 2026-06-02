@@ -143,10 +143,18 @@
                         <span class="text-slate-300 font-medium italic text-xs">No Config File</span>
                         {% endif %}
                     </td>
-                    <td class="py-4 px-6 text-right whitespace-nowrap">
-                        <button onclick="event.stopPropagation(); toggleRow('log-{{ log.id }}');" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
-                            <i id="icon-log-{{ log.id }}" class="fas fa-chevron-down transition-transform duration-200 text-xs"></i>
-                        </button>
+                    <td class="py-4 px-6 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+                        <div class="inline-flex gap-2 items-center">
+                            <button
+                                hx-get="/backups/{{ log.id }}/delete/confirm"
+                                hx-target="#modal-content"
+                                class="inline-flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium py-1.5 px-3 rounded-lg text-xs border border-rose-100 hover:border-rose-200 transition-all">
+                                <i class="fas fa-trash-alt text-[10px] text-rose-400"></i> Delete
+                            </button>
+                            <button onclick="toggleRow('log-{{ log.id }}');" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                                <i id="icon-log-{{ log.id }}" class="fas fa-chevron-down transition-transform duration-200 text-xs"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 <!-- Expandable Log Output -->

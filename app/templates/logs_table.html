@@ -11,7 +11,7 @@
             </thead>
             <tbody class="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
                 {% for log in logs %}
-                <tr class="hover:bg-slate-50/80 transition-colors">
+                <tr id="log-row-{{ log.id }}" class="hover:bg-slate-50/80 transition-colors">
                     <td class="py-4 px-6 text-slate-600 whitespace-nowrap">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                     <td class="py-4 px-6 font-semibold text-slate-900">
                         {{ log.device.hostname if log.device else 'Unknown' }}
@@ -32,14 +32,22 @@
                         {% endif %}
                     </td>
                     <td class="py-4 px-6 text-right whitespace-nowrap">
-                        {% if log.session_log_path %}
-                        <a href="/logs/view/{{ log.id }}"
-                            class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold py-1.5 px-3 rounded-lg text-xs border border-slate-200 hover:border-slate-300 transition-all">
-                            <i class="fas fa-file-alt text-slate-400"></i> View Session Log
-                        </a>
-                        {% else %}
-                        <span class="text-slate-400 text-xs italic">No Session Log</span>
-                        {% endif %}
+                        <div class="inline-flex gap-2">
+                            {% if log.session_log_path %}
+                            <a href="/logs/view/{{ log.id }}"
+                                class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold py-1.5 px-3 rounded-lg text-xs border border-slate-200 hover:border-slate-300 transition-all">
+                                <i class="fas fa-file-alt text-slate-400"></i> View Session Log
+                            </a>
+                            {% else %}
+                            <span class="inline-flex items-center text-slate-400 text-xs italic py-1.5">No Session Log</span>
+                            {% endif %}
+                            <button
+                                hx-get="/backups/{{ log.id }}/delete/confirm"
+                                hx-target="#modal-content"
+                                class="inline-flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium py-1.5 px-3 rounded-lg text-xs border border-rose-100 hover:border-rose-200 transition-all">
+                                <i class="fas fa-trash-alt text-[10px] text-rose-400"></i> Delete
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 {% else %}

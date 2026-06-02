@@ -297,3 +297,44 @@ async def download_group_backups(group_id: int, session: Session = SessionDep):
     }
     return StreamingResponse(zip_buffer, media_type="application/x-zip-compressed", headers=headers)
 
+@router.get("/{log_id}/delete/confirm", response_class=HTMLResponse)
+async def confirm_delete_log(request: Request, log_id: int, session: Session = SessionDep):
+    log = session.get(BackupLog, log_id)
+    if not log:
+        raise HTTPException(status_code=404, detail="Log entry not found")
+    return templates.TemplateResponse("log_delete_confirm.html", {"request": request, "log": log})
+
+@router.post("/{log_id}/delete", response_class=HTMLResponse)
+async def delete_log(request: Request, log_id: int, session: Session = SessionDep):
+    log = session.get(BackupLog, log_id)
+    if log:
+        # Clean up files on disk
+        if log.file_path and os.path.exists(log.file_path):
+            try:
+                os.remove(log.file_path)
+            except Exception as e:
+                print(f"Error removing backup config file: {e}")
+                
+        if log.session_log_path and os.path.exists(log.session_log_path):
+            try:
+                os.remove(log.session_log_path)
+            except Exception as e:
+                print(f"Error removing session log trace: {e}")
+                
+        session.delete(log)
+        session.commit()
+        
+        if request.headers.get("HX-Request"):
+            content = f'<tr hx-swap-oob="delete:#log-{log_id}"></tr>'
+            response = HTMLResponse(content)
+            response.headers["HX-Trigger"] = '{"closeModal": "", "showToast": {"message": "Backup log entry deleted successfully!", "type": "success"}}'
+            return response
+            
+    if request.headers.get("HX-Request"):
+        response = HTMLResponse("")
+        response.headers["HX-Trigger"] = '{"closeModal": "", "showToast": {"message": "Log entry not found", "type": "error"}}'
+        return response
+        
+    return RedirectResponse(url="/backups", status_code=303)
+
+
