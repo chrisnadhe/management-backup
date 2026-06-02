@@ -31,6 +31,8 @@ class Device(SQLModel, table=True):
     group: Optional[DeviceGroup] = Relationship(back_populates="devices")
     backups: List["BackupLog"] = Relationship(back_populates="device")
     schedules: List["Schedule"] = Relationship(back_populates="device")
+    push_logs: List["PushLog"] = Relationship(back_populates="device")
+    push_schedules: List["PushSchedule"] = Relationship(back_populates="device")
 
 class Command(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -65,3 +67,30 @@ class Schedule(SQLModel, table=True):
     backups: List[BackupLog] = Relationship(back_populates="schedule")
     device: Optional[Device] = Relationship(back_populates="schedules") # Helpful for targeting lookup
     group: Optional[DeviceGroup] = Relationship() # Helpful for targeting lookup
+
+class PushLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    device_id: Optional[int] = Field(default=None, foreign_key="device.id")
+    schedule_id: Optional[int] = Field(default=None, foreign_key="pushschedule.id")
+    status: str # "success", "failed"
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    log_output: Optional[str] = None
+    session_log_path: Optional[str] = None
+    
+    device: Optional[Device] = Relationship(back_populates="push_logs")
+    schedule: Optional["PushSchedule"] = Relationship(back_populates="push_logs")
+
+class PushSchedule(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    cron_expression: str # e.g., "0 2 * * *"
+    enabled: bool = Field(default=True)
+    limit_to_device_id: Optional[int] = Field(default=None, foreign_key="device.id")
+    limit_to_group_id: Optional[int] = Field(default=None, foreign_key="devicegroup.id")
+    commands_text: str
+    next_run: Optional[datetime] = None
+    last_run: Optional[datetime] = None
+    
+    push_logs: List[PushLog] = Relationship(back_populates="schedule")
+    device: Optional[Device] = Relationship(back_populates="push_schedules")
+    group: Optional[DeviceGroup] = Relationship()

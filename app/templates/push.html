@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+            <i class="fas fa-paper-plane text-indigo-500"></i> Push Configuration
+        </h1>
+        <p class="text-slate-500 mt-2">Deploy configuration commands to devices or groups.</p>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="mb-6 flex gap-2 border-b border-slate-200">
+    <a href="/push?view=form" 
+       class="px-4 py-2 border-b-2 font-medium text-sm transition-colors {% if view == 'form' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300{% endif %}">
+        <i class="fas fa-terminal mr-1"></i> New Push
+    </a>
+    <a href="/push?view=schedules" 
+       class="px-4 py-2 border-b-2 font-medium text-sm transition-colors {% if view == 'schedules' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300{% endif %}">
+        <i class="fas fa-clock mr-1"></i> Schedules
+    </a>
+    <a href="/push?view=logs" 
+       class="px-4 py-2 border-b-2 font-medium text-sm transition-colors {% if view == 'logs' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300{% endif %}">
+        <i class="fas fa-history mr-1"></i> History Logs
+    </a>
+</div>
+
+{% if view == 'form' %}
+<!-- New Push Form -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Ad-hoc Push -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-bolt text-amber-500"></i> Run Now
+        </h2>
+        <form action="/push/run" method="post" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Target Type</label>
+                <select name="target_type" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required onchange="toggleTargets(this.value, 'run')">
+                    <option value="device">Single Device</option>
+                    <option value="group">Device Group</option>
+                </select>
+            </div>
+            
+            <div id="run-device-select">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Target Device</label>
+                <select name="target_id" id="run-target-id-device" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    {% for d in devices %}
+                    <option value="{{ d.id }}">{{ d.hostname }} ({{ d.ip_address }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="run-group-select" class="hidden">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Target Group</label>
+                <select name="target_id" id="run-target-id-group" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" disabled>
+                    {% for g in groups %}
+                    <option value="{{ g.id }}">{{ g.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Configuration Commands</label>
+                <p class="text-xs text-slate-500 mb-2">Enter commands exactly as you would type them in config mode.</p>
+                <textarea name="commands_text" rows="5" class="w-full font-mono text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required placeholder="interface loopback 0\ndescription Pushed from NetBackup\nexit"></textarea>
+            </div>
+
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                <i class="fas fa-play text-xs"></i> Execute Push
+            </button>
+        </form>
+    </div>
+
+    <!-- Schedule Push -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-calendar-plus text-emerald-500"></i> Schedule Push
+        </h2>
+        <form action="/push/schedule" method="post" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Schedule Name</label>
+                <input type="text" name="name" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required placeholder="Weekly config update">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Cron Expression</label>
+                <input type="text" name="cron_expression" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required placeholder="0 2 * * *">
+                <p class="text-xs text-slate-500 mt-1">Format: minute hour day month day-of-week</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Target Type</label>
+                <select name="target_type" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required onchange="toggleTargets(this.value, 'sch')">
+                    <option value="device">Single Device</option>
+                    <option value="group">Device Group</option>
+                </select>
+            </div>
+            
+            <div id="sch-device-select">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Target Device</label>
+                <select name="target_id" id="sch-target-id-device" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    {% for d in devices %}
+                    <option value="{{ d.id }}">{{ d.hostname }} ({{ d.ip_address }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="sch-group-select" class="hidden">
+                <label class="block text-sm font-medium text-slate-700 mb-1">Target Group</label>
+                <select name="target_id" id="sch-target-id-group" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" disabled>
+                    {% for g in groups %}
+                    <option value="{{ g.id }}">{{ g.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Configuration Commands</label>
+                <textarea name="commands_text" rows="5" class="w-full font-mono text-sm bg-slate-900 text-slate-100 border border-slate-700 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required placeholder="interface loopback 0\ndescription Scheduled Push\nexit"></textarea>
+            </div>
+
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                <i class="fas fa-save text-xs"></i> Save Schedule
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleTargets(type, prefix) {
+    const devSelect = document.getElementById(prefix + '-device-select');
+    const grpSelect = document.getElementById(prefix + '-group-select');
+    const devInput = document.getElementById(prefix + '-target-id-device');
+    const grpInput = document.getElementById(prefix + '-target-id-group');
+    
+    if (type === 'device') {
+        devSelect.classList.remove('hidden');
+        devInput.disabled = false;
+        grpSelect.classList.add('hidden');
+        grpInput.disabled = true;
+    } else {
+        devSelect.classList.add('hidden');
+        devInput.disabled = true;
+        grpSelect.classList.remove('hidden');
+        grpInput.disabled = false;
+    }
+}
+</script>
+
+{% elif view == 'schedules' %}
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Target</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Cron</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-slate-100">
+            {% for s in schedules %}
+            <tr id="schedule-{{ s.id }}">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-slate-900">{{ s.name }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {% if s.device %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            Device: {{ s.device.hostname }}
+                        </span>
+                    {% elif s.group %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                            Group: {{ s.group.name }}
+                        </span>
+                    {% else %}
+                        All Devices
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600">
+                    {{ s.cron_expression }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <button hx-post="/push/schedule/{{ s.id }}/toggle" hx-swap="none" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 {% if s.enabled %}bg-indigo-600{% else %}bg-slate-200{% endif %}" role="switch" aria-checked="{{ s.enabled | lower }}">
+                        <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {% if s.enabled %}translate-x-5{% else %}translate-x-0{% endif %}"></span>
+                    </button>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button hx-post="/push/schedule/{{ s.id }}/delete" hx-confirm="Are you sure you want to delete this schedule?" class="text-rose-600 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg transition-colors">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="px-6 py-10 text-center text-slate-500">
+                    <i class="fas fa-calendar-times text-4xl mb-3 text-slate-300"></i>
+                    <p>No push schedules configured.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% elif view == 'logs' %}
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+            <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Time</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Device</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Output</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-slate-100">
+            {% for log in logs %}
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                    {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-slate-900">{{ log.device.hostname if log.device else 'Unknown' }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div hx-get="/push/status/{{ log.id }}?view=badge" hx-trigger="load">
+                        <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-bold rounded-full border bg-slate-50 text-slate-700 border-slate-200">Loading...</span>
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-sm text-slate-500 max-w-xs truncate">
+                    <button onclick="document.getElementById('log-viewer-{{ log.id }}').classList.toggle('hidden')" class="text-indigo-600 hover:text-indigo-900 text-xs">
+                        View Output <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    <div id="log-viewer-{{ log.id }}" class="hidden mt-3 w-full max-w-2xl">
+                        <div hx-get="/push/status/{{ log.id }}?view=log" hx-trigger="load">
+                            <pre class="text-xs text-slate-400 bg-slate-900 p-2 rounded">Loading...</pre>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="px-6 py-10 text-center text-slate-500">
+                    <i class="fas fa-history text-4xl mb-3 text-slate-300"></i>
+                    <p>No push execution logs found.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endif %}
+{% endblock %}

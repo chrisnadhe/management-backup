@@ -13,7 +13,7 @@ from app.models import Device, BackupLog
 from app.services.scheduler_service import start_scheduler
 
 # Routers
-from app.routers import devices, groups, credentials, commands, backups, schedules, logs
+from app.routers import devices, groups, credentials, commands, backups, schedules, logs, push
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,6 +46,7 @@ app.include_router(commands.router)
 app.include_router(backups.router)
 app.include_router(schedules.router)
 app.include_router(logs.router)
+app.include_router(push.router)
 
 # --- Routes ---
 
