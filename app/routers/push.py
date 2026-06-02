@@ -220,7 +220,7 @@ async def trigger_push(
 
     if request.headers.get("HX-Request"):
         response = HTMLResponse("")
-        response.headers["HX-Trigger"] = f'{{"showToast": {{"message": "{msg}", "type": "info"}}}}'
+        response.headers["HX-Trigger"] = f'{{"closeModal": "", "showToast": {{"message": "{msg}", "type": "info"}}}}'
         return response
 
     return RedirectResponse(url=f"/push?msg={msg}&view=logs", status_code=303)
