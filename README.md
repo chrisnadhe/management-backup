@@ -130,7 +130,7 @@ management-backup/
 
 ## Stack Teknologi
 
-- **Backend**: FastAPI, SQLModel, APScheduler, Passlib (bcrypt), itsdangerous
+- **Backend**: FastAPI, SQLModel, APScheduler, bcrypt, itsdangerous
 - **Network**: Netmiko
 - **Frontend**: HTMX, Jinja2 Templates, Tailwind CSS (Glassmorphism UI)
 - **Database**: SQLite (WAL Mode)
