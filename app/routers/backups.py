@@ -388,6 +388,9 @@ async def diff_backup(log_id: int, compare_with: int, session: Session = Session
     result_html = f'''<div class="space-y-4">
         <div class="flex items-center justify-between">
             <h3 class="text-lg font-bold text-slate-800">Backup Diff</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                <i class="fas fa-times text-lg"></i>
+            </button>
         </div>
         <div class="grid grid-cols-2 gap-2 text-xs">
             <div class="bg-rose-50 border border-rose-200 rounded-lg px-3 py-1.5 text-rose-700 font-mono truncate">{html_lib.escape(fname1)}</div>
@@ -402,7 +405,11 @@ async def diff_backup(log_id: int, compare_with: int, session: Session = Session
                 <tbody>{table_rows}</tbody>
             </table>
         </div>
-    </div>'''
+    </div>
+    <script>
+        document.getElementById('modal-content').parentElement.classList.remove('max-w-xl');
+        document.getElementById('modal-content').parentElement.classList.add('max-w-5xl');
+    </script>'''
     return HTMLResponse(result_html)
 
 

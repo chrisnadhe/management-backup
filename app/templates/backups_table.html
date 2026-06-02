@@ -82,10 +82,19 @@
     
     {% else %}
     <!-- List View -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-4 gap-3">
+        <div class="text-sm font-semibold text-slate-700">Backup History</div>
+        <button id="compare-btn" disabled onclick="compareSelected()" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/20 transition-all flex items-center gap-1.5">
+            <i class="fas fa-code-compare"></i> Compare Selected (0/2)
+        </button>
+    </div>
     <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm bg-white">
         <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
                 <tr>
+                    <th scope="col" class="py-4 px-4 w-12 text-center">
+                        <i class="fas fa-check-square text-slate-300"></i>
+                    </th>
                     <th scope="col" class="py-4 px-6 text-left">Timestamp</th>
                     <th scope="col" class="py-4 px-6 text-left">Device</th>
                     <th scope="col" class="py-4 px-6 text-left">Trigger Source</th>
@@ -97,6 +106,11 @@
             <tbody class="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
                 {% for log in backups %}
                 <tr id="log-row-{{ log.id }}" class="hover:bg-slate-50/50 transition-all cursor-pointer" onclick="toggleRow('log-{{ log.id }}')">
+                    <td class="py-4 px-4 text-center" onclick="event.stopPropagation()">
+                        {% if log.file_path %}
+                        <input type="checkbox" class="compare-checkbox w-4 h-4 rounded accent-indigo-600 cursor-pointer" value="{{ log.id }}" onchange="updateCompareBtn()">
+                        {% endif %}
+                    </td>
                     <td class="py-4 px-6 text-slate-600 whitespace-nowrap">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                     <td class="py-4 px-6 font-semibold text-slate-900">
                         {% if log.device %}{{ log.device.hostname }}{% else %}<span class="text-slate-400 italic">Unknown</span>{% endif %}
@@ -145,6 +159,14 @@
                     </td>
                     <td class="py-4 px-6 text-right whitespace-nowrap" onclick="event.stopPropagation()">
                         <div class="inline-flex gap-2 items-center">
+                            {% if log.file_path %}
+                            <button
+                                hx-get="/backups/{{ log.id }}/preview"
+                                hx-target="#modal-content"
+                                class="inline-flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium py-1.5 px-3 rounded-lg text-xs border border-indigo-100 hover:border-indigo-200 transition-all">
+                                <i class="fas fa-eye text-[10px] text-indigo-400"></i> Preview
+                            </button>
+                            {% endif %}
                             <button
                                 hx-get="/backups/{{ log.id }}/delete/confirm"
                                 hx-target="#modal-content"
@@ -159,7 +181,7 @@
                 </tr>
                 <!-- Expandable Log Output -->
                 <tr id="log-{{ log.id }}" class="hidden bg-slate-50/50" onclick="event.stopPropagation()">
-                    <td colspan="6" class="px-6 py-4">
+                    <td colspan="7" class="px-6 py-4">
                         <div class="space-y-2">
                             <div class="flex justify-between items-center text-xs font-bold text-slate-500">
                                 <span>LOG RUN OUTPUT</span>
@@ -182,7 +204,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="py-8 px-6 text-center text-slate-400 italic bg-white">
+                    <td colspan="7" class="py-8 px-6 text-center text-slate-400 italic bg-white">
                         No backup logs found.
                     </td>
                 </tr>
@@ -230,3 +252,28 @@
     </div>
     {% endif %}
 </div>
+
+<script>
+    function updateCompareBtn() {
+        const checkboxes = document.querySelectorAll('.compare-checkbox:checked');
+        const btn = document.getElementById('compare-btn');
+        if (btn) {
+            btn.disabled = checkboxes.length !== 2;
+            btn.innerHTML = `<i class="fas fa-code-compare"></i> Compare Selected (${checkboxes.length}/2)`;
+        }
+    }
+
+    function compareSelected() {
+        const checkboxes = document.querySelectorAll('.compare-checkbox:checked');
+        if (checkboxes.length === 2) {
+            const id1 = checkboxes[0].value;
+            const id2 = checkboxes[1].value;
+            htmx.ajax('GET', `/backups/${id1}/diff?compare_with=${id2}`, {
+                target: '#modal-content', 
+                swap: 'innerHTML'
+            });
+        } else {
+            showToast('Harap pilih tepat 2 backup file untuk dibandingkan!', 'error');
+        }
+    }
+</script>

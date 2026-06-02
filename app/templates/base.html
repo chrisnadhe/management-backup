@@ -73,7 +73,11 @@
                 // Clean modal contents after transition completes
                 setTimeout(() => {
                     const content = document.getElementById('modal-content');
-                    if (content) content.innerHTML = '';
+                    if (content) {
+                        content.innerHTML = '';
+                        // Reset modal width to default
+                        content.parentElement.className = 'relative z-10 w-full max-w-xl mx-4 glass-panel rounded-2xl shadow-2xl p-6 modal-content bg-white';
+                    }
                 }, 300);
             }
         }
