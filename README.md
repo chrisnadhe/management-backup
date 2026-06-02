@@ -26,7 +26,7 @@ Aplikasi manajemen backup konfigurasi perangkat jaringan berbasis web, dibangun 
 ### 1. Clone repository
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/chrisnadhe/management-backup.git
 cd management-backup
 ```
 
