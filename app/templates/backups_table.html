@@ -1,0 +1,218 @@
+<div id="backups-table-container" class="space-y-4">
+    {% if view == 'grouped' %}
+    <!-- Grouped View -->
+    <div class="grid gap-6">
+        {% for item in grouped_data %}
+        <div class="glass-panel p-6 rounded-2xl shadow-sm space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-2.5 h-2.5 rounded-full bg-indigo-600"></div>
+                    <h3 class="font-bold text-slate-800 text-lg">{{ item.group.name }}</h3>
+                    <span class="text-xs text-slate-400 font-medium">({{ item.devices|length }} devices)</span>
+                </div>
+                {% if item.group.id %}
+                <button onclick="openBackupModal('group-{{ item.group.id }}', '{{ item.group.name }}', '')"
+                    class="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-1.5 px-3 rounded-lg text-xs transition-all border border-indigo-100/50">
+                    <i class="fas fa-play text-[10px]"></i> Group Backup
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {% for device_item in item.devices %}
+                {% set device = device_item.device %}
+                {% set latest_backups = device_item.latest_backups %}
+                <div class="border border-slate-200/60 rounded-xl bg-slate-50/50 p-4 hover:border-slate-300 hover:bg-slate-50 transition-all flex flex-col justify-between gap-3">
+                    <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-white rounded-lg shadow-sm border border-slate-100 flex items-center justify-center">
+                                <i class="fas fa-server text-xs text-slate-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-sm">{{ device.hostname }}</h4>
+                                <p class="text-[11px] text-slate-400 font-mono">{{ device.ip_address }}</p>
+                            </div>
+                        </div>
+                        <button onclick="openBackupModal('{{ device.id }}', '{{ device.hostname }}', '{{ device.device_type }}')"
+                            class="text-slate-400 hover:text-indigo-600 transition-colors p-1" title="Run Backup">
+                            <i class="fas fa-play text-xs"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="flex items-center justify-between border-t border-slate-100/80 pt-3 mt-1">
+                        <span class="text-[11px] text-slate-400 font-medium">Last Status:</span>
+                        {% if latest_backups %}
+                            {% set last = latest_backups[0] %}
+                            <!-- Polling status badge -->
+                            <div id="group-device-status-{{ last.id }}">
+                                {% if last.status == 'running' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100/50"
+                                      hx-get="/backups/status/{{ last.id }}?view=badge&context=grouped"
+                                      hx-trigger="every 2s"
+                                      hx-target="this"
+                                      hx-swap="outerHTML">
+                                    <i class="fas fa-spinner fa-spin mr-1 text-amber-500"></i> running
+                                </span>
+                                {% elif last.status == 'success' %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                                    <i class="fas fa-check-circle mr-1 text-emerald-500"></i> success
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-100/50">
+                                    <i class="fas fa-times-circle mr-1 text-rose-500"></i> failed
+                                </span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <span class="text-[10px] text-slate-400 italic">No backups</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <!-- List View -->
+    <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                    <th scope="col" class="py-4 px-6 text-left">Timestamp</th>
+                    <th scope="col" class="py-4 px-6 text-left">Device</th>
+                    <th scope="col" class="py-4 px-6 text-left">Trigger Source</th>
+                    <th scope="col" class="py-4 px-6 text-left">Status</th>
+                    <th scope="col" class="py-4 px-6 text-left">Configuration File</th>
+                    <th scope="col" class="py-4 px-6 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
+                {% for log in backups %}
+                <tr id="log-row-{{ log.id }}" class="hover:bg-slate-50/50 transition-all cursor-pointer" onclick="toggleRow('log-{{ log.id }}')">
+                    <td class="py-4 px-6 text-slate-600 whitespace-nowrap">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td class="py-4 px-6 font-semibold text-slate-900">
+                        {% if log.device %}{{ log.device.hostname }}{% else %}<span class="text-slate-400 italic">Unknown</span>{% endif %}
+                    </td>
+                    <td class="py-4 px-6">
+                        {% if log.schedule_id %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50" title="{{ log.schedule.name if log.schedule else '' }}">
+                            <i class="fas fa-calendar-alt text-[10px]"></i> Schedule
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200/50">
+                            <i class="fas fa-user text-[10px]"></i> Manual
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6">
+                        <div id="list-device-status-{{ log.id }}">
+                            {% if log.status == 'running' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/50"
+                                  hx-get="/backups/status/{{ log.id }}?view=badge&context=list"
+                                  hx-trigger="every 2s"
+                                  hx-target="this"
+                                  hx-swap="outerHTML"
+                                  onclick="event.stopPropagation()">
+                                <i class="fas fa-spinner fa-spin mr-1.5 text-amber-500"></i> running
+                            </span>
+                            {% elif log.status == 'success' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                                <i class="fas fa-check-circle mr-1.5 text-emerald-500"></i> success
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/50">
+                                <i class="fas fa-times-circle mr-1.5 text-rose-500"></i> failed
+                            </span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="py-4 px-6 text-slate-500" onclick="event.stopPropagation()">
+                        {% if log.file_path %}
+                        <a href="/backups/download/{{ log.id }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold hover:underline">
+                            <i class="fas fa-download text-xs"></i> Download
+                        </a>
+                        {% else %}
+                        <span class="text-slate-300 font-medium italic text-xs">No Config File</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                        <button onclick="event.stopPropagation(); toggleRow('log-{{ log.id }}');" class="text-slate-400 hover:text-slate-600 transition-colors p-1">
+                            <i id="icon-log-{{ log.id }}" class="fas fa-chevron-down transition-transform duration-200 text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+                <!-- Expandable Log Output -->
+                <tr id="log-{{ log.id }}" class="hidden bg-slate-50/50" onclick="event.stopPropagation()">
+                    <td colspan="6" class="px-6 py-4">
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-xs font-bold text-slate-500">
+                                <span>LOG RUN OUTPUT</span>
+                                {% if log.status == 'running' %}
+                                <span class="text-amber-600 animate-pulse flex items-center gap-1.5">
+                                    <i class="fas fa-spinner fa-spin"></i> Polling live log output...
+                                </span>
+                                {% endif %}
+                            </div>
+                            <pre id="log-output-content-{{ log.id }}" 
+                                 class="text-xs font-mono whitespace-pre-wrap text-slate-300 bg-slate-900 p-4 rounded-xl border border-slate-800 max-h-60 overflow-y-auto"
+                                 {% if log.status == 'running' %}
+                                 hx-get="/backups/status/{{ log.id }}?view=log"
+                                 hx-trigger="every 2s"
+                                 hx-target="this"
+                                 hx-swap="innerHTML"
+                                 {% endif %}>{{ log.log_output or 'Running backup command...' }}</pre>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-8 px-6 text-center text-slate-400 italic bg-white">
+                        No backup logs found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+        <div class="text-xs text-slate-500 font-medium">
+            Showing {{ (page - 1) * limit + 1 if backups else 0 }} to {{ (page - 1) * limit + backups|length }} of {{ total_count }} entries
+        </div>
+        <div class="flex items-center gap-3">
+            {% if page > 1 %}
+            <button
+                hx-get="/backups?page={{ page - 1 }}&q={{ q }}&limit={{ limit }}&view=list"
+                hx-target="#backups-table-container"
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+                Previous
+            </button>
+            {% else %}
+            <span class="bg-slate-100/60 text-slate-400 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200/50 cursor-not-allowed">
+                Previous
+            </span>
+            {% endif %}
+
+            <div class="text-xs font-semibold text-slate-600">
+                Page {{ page }} of {{ total_pages if total_pages > 0 else 1 }}
+            </div>
+
+            {% if page < total_pages %}
+            <button
+                hx-get="/backups?page={{ page + 1 }}&q={{ q }}&limit={{ limit }}&view=list"
+                hx-target="#backups-table-container"
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+                Next
+            </button>
+            {% else %}
+            <span class="bg-slate-100/60 text-slate-400 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200/50 cursor-not-allowed">
+                Next
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>

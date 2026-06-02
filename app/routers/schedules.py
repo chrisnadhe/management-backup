@@ -1,18 +1,24 @@
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Form, Request, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from app.database import SessionDep
 from app.models import Schedule, Device, DeviceGroup, Command
 from app.services.scheduler_service import add_job_to_scheduler, remove_job_from_scheduler
+from app.templates import templates
 
 router = APIRouter(prefix="/schedules", tags=["schedules"])
-templates = Jinja2Templates(directory="app/templates")
+
+# Helper to fetch schedules context
+def get_schedules_context(session: Session, request: Request):
+    schedules = session.exec(select(Schedule)).all()
+    return {"request": request, "schedules": schedules}
 
 @router.get("", response_class=HTMLResponse)
 async def list_schedules(request: Request, session: Session = SessionDep):
-    schedules = session.exec(select(Schedule)).all()
-    return templates.TemplateResponse("schedules.html", {"request": request, "schedules": schedules})
+    context = get_schedules_context(session, request)
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
+        return templates.TemplateResponse("schedules_table.html", context)
+    return templates.TemplateResponse("schedules.html", context)
 
 @router.get("/new", response_class=HTMLResponse)
 async def new_schedule_form(request: Request, session: Session = SessionDep):
@@ -49,14 +55,22 @@ async def create_schedule(
     session.commit()
     session.refresh(schedule)
     
-    # scheduler_service handle enabling logic internally now
+    # scheduler_service handle enabling logic internally
     add_job_to_scheduler(schedule)
     
+    if request.headers.get("HX-Request"):
+        context = get_schedules_context(session, request)
+        response = templates.TemplateResponse("schedules_table.html", context)
+        response.headers["HX-Trigger"] = f'{{"closeModal": "", "showToast": {{"message": "Schedule {name} created successfully!", "type": "success"}}}}'
+        return response
+        
     return RedirectResponse(url="/schedules", status_code=303)
 
 @router.get("/{schedule_id}/edit", response_class=HTMLResponse)
 async def edit_schedule_form(request: Request, schedule_id: int, session: Session = SessionDep):
     schedule = session.get(Schedule, schedule_id)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
     devices = session.exec(select(Device)).all()
     groups = session.exec(select(DeviceGroup)).all()
     commands = session.exec(select(Command)).all()
@@ -82,6 +96,10 @@ async def update_schedule(
 ):
     schedule = session.get(Schedule, schedule_id)
     if not schedule:
+        if request.headers.get("HX-Request"):
+            response = HTMLResponse("")
+            response.headers["HX-Trigger"] = '{"closeModal": "", "showToast": {"message": "Schedule not found", "type": "error"}}'
+            return response
         return RedirectResponse(url="/schedules?error=Schedule not found", status_code=303)
         
     schedule.name = name
@@ -97,14 +115,39 @@ async def update_schedule(
     
     # Update job status in scheduler
     add_job_to_scheduler(schedule)
+    
+    if request.headers.get("HX-Request"):
+        context = get_schedules_context(session, request)
+        response = templates.TemplateResponse("schedules_table.html", context)
+        response.headers["HX-Trigger"] = f'{{"closeModal": "", "showToast": {{"message": "Schedule {name} updated successfully!", "type": "success"}}}}'
+        return response
         
     return RedirectResponse(url="/schedules", status_code=303)
 
+@router.get("/{schedule_id}/delete/confirm", response_class=HTMLResponse)
+async def confirm_delete_schedule(request: Request, schedule_id: int, session: Session = SessionDep):
+    schedule = session.get(Schedule, schedule_id)
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return templates.TemplateResponse("schedule_delete_confirm.html", {"request": request, "schedule": schedule})
+
 @router.post("/{schedule_id}/delete", response_class=HTMLResponse)
-async def delete_schedule(schedule_id: int, session: Session = SessionDep):
+async def delete_schedule(request: Request, schedule_id: int, session: Session = SessionDep):
     schedule = session.get(Schedule, schedule_id)
     if schedule:
+        name = schedule.name
         remove_job_from_scheduler(schedule.id)
         session.delete(schedule)
         session.commit()
+        
+        if request.headers.get("HX-Request"):
+            response = HTMLResponse("")
+            response.headers["HX-Trigger"] = f'{{"closeModal": "", "showToast": {{"message": "Schedule {name} deleted successfully!", "type": "success"}}}}'
+            return response
+            
+    if request.headers.get("HX-Request"):
+        response = HTMLResponse("")
+        response.headers["HX-Trigger"] = '{"closeModal": "", "showToast": {"message": "Schedule not found", "type": "error"}}'
+        return response
+        
     return RedirectResponse(url="/schedules", status_code=303)

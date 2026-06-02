@@ -1,0 +1,31 @@
+<div>
+    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+        <h3 class="text-lg font-bold text-slate-900">Delete Group</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+    
+    <div class="mb-6">
+        <div class="flex items-center gap-3 p-3.5 mb-4 rounded-xl bg-rose-50 text-rose-800 border border-rose-100 text-sm">
+            <i class="fas fa-exclamation-triangle text-lg text-rose-500 flex-shrink-0"></i>
+            <div>
+                <p class="font-semibold">Warning: This action cannot be undone</p>
+                <p class="text-rose-700/90 text-xs">Are you sure you want to delete the group <span class="font-semibold">{{ group.name }}</span>? Devices inside this group will be unassigned but not deleted.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="flex justify-end gap-3">
+        <button onclick="closeModal()" class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-4 rounded-xl border border-slate-200 transition-all text-sm">
+            Cancel
+        </button>
+        <button 
+            hx-post="/groups/{{ group.id }}/delete" 
+            hx-target="#group-row-{{ group.id }}" 
+            hx-swap="outerHTML swap:350ms"
+            class="bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 px-4 rounded-xl shadow-lg shadow-rose-600/20 transition-all text-sm">
+            Delete Group
+        </button>
+    </div>
+</div>

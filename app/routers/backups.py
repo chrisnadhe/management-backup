@@ -1,38 +1,26 @@
-from fastapi import APIRouter, Form, Request, BackgroundTasks
+from fastapi import APIRouter, Form, Request, BackgroundTasks, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
-from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, col, func
 from app.database import SessionDep
-from app.models import BackupLog, Device, DeviceGroup, Command, Schedule
+from app.models import BackupLog, Device, DeviceGroup, Command
 from app.services.backup_service import run_backup, run_backup_group
+from app.templates import templates
 import os
 
 router = APIRouter(prefix="/backups", tags=["backups"])
-templates = Jinja2Templates(directory="app/templates")
 
-@router.get("", response_class=HTMLResponse)
-async def list_backups(
-    request: Request, 
-    session: Session = SessionDep,
-    q: str = "",
-    page: int = 1,
-    limit: int = 20,
-    view: str = "list"
-):
+# Helper to fetch backups context
+def get_backups_context(session: Session, request: Request, q: str = "", page: int = 1, limit: int = 20, view: str = "list"):
     if view == "grouped":
-        # Grouped view logic
         groups = session.exec(select(DeviceGroup)).all()
         devices = session.exec(select(Device)).all()
+        commands = session.exec(select(Command)).all()
         
-        # Organize devices by group
         grouped_data = []
-        
-        # Add real groups
         for group in groups:
             group_devices_info = []
             group_devices = [d for d in devices if d.group_id == group.id]
             for d in group_devices:
-                # Fetch latest 10 backups for each device
                 backups = session.exec(
                     select(BackupLog)
                     .where(BackupLog.device_id == d.id)
@@ -50,7 +38,6 @@ async def list_backups(
                     "devices": group_devices_info
                 })
         
-        # Add unassigned devices
         unassigned_devices = [d for d in devices if d.group_id is None]
         unassigned_devices_info = []
         for d in unassigned_devices:
@@ -71,47 +58,36 @@ async def list_backups(
                 "devices": unassigned_devices_info
             })
             
-        commands = session.exec(select(Command)).all()
-            
-        return templates.TemplateResponse("backups.html", {
+        return {
             "request": request,
             "grouped_data": grouped_data,
             "view": view,
             "q": q,
             "page": page,
             "limit": limit,
-            "devices": devices,  # Required for the Run Backup dropdown
-            "commands": commands # Required for the Backup modal
-        })
+            "devices": devices,
+            "commands": commands
+        }
 
-    # Default List view logic
+    # Default List view
     offset = (page - 1) * limit
-    
-    # Base query
     statement = select(BackupLog).join(Device, isouter=True)
-    
-    # Filtering
     if q:
-        # Search by device hostname, status, or log output
         statement = statement.where(
             (col(Device.hostname).contains(q)) | 
             (col(BackupLog.status).contains(q)) |
             (col(BackupLog.log_output).contains(q))
         )
     
-    # Total count for pagination
     total_count = session.exec(select(func.count()).select_from(statement.subquery())).one()
-    
-    # Pagination and sorting
     statement = statement.order_by(BackupLog.timestamp.desc()).offset(offset).limit(limit)
     backups = session.exec(statement).all()
     
     devices = session.exec(select(Device)).all()
     commands = session.exec(select(Command)).all()
-    
     total_pages = (total_count + limit - 1) // limit
     
-    return templates.TemplateResponse("backups.html", {
+    return {
         "request": request, 
         "backups": backups, 
         "devices": devices, 
@@ -122,20 +98,83 @@ async def list_backups(
         "total_pages": total_pages,
         "total_count": total_count,
         "view": view
-    })
+    }
 
-@router.post("/run/group/{group_id}", response_class=RedirectResponse)
+@router.get("", response_class=HTMLResponse)
+async def list_backups(
+    request: Request, 
+    session: Session = SessionDep,
+    q: str = "",
+    page: int = 1,
+    limit: int = 20,
+    view: str = "list"
+):
+    context = get_backups_context(session, request, q, page, limit, view)
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
+        return templates.TemplateResponse("backups_table.html", context)
+    return templates.TemplateResponse("backups.html", context)
+
+@router.get("/status/{log_id}", response_class=HTMLResponse)
+async def get_backup_status(
+    log_id: int, 
+    view: str = "badge", 
+    context: str = "list", 
+    session: Session = SessionDep
+):
+    log = session.get(BackupLog, log_id)
+    if not log:
+        return HTMLResponse('<span class="text-slate-400">Unknown</span>')
+    
+    if view == "badge":
+        if log.status == "running":
+            trigger_attr = f'hx-get="/backups/status/{log_id}?view=badge&context={context}" hx-trigger="every 2s" hx-swap="outerHTML"'
+            spinner = '<i class="fas fa-spinner fa-spin mr-1.5 text-amber-500"></i>'
+            status_class = "bg-amber-50 text-amber-700 border-amber-200"
+        elif log.status == "success":
+            trigger_attr = ""
+            spinner = '<i class="fas fa-check-circle mr-1.5 text-emerald-500"></i>'
+            status_class = "bg-emerald-50 text-emerald-700 border-emerald-200"
+        else:
+            trigger_attr = ""
+            spinner = '<i class="fas fa-times-circle mr-1.5 text-rose-500"></i>'
+            status_class = "bg-rose-50 text-rose-700 border-rose-200"
+            
+        px = "px-2.5 py-0.5 text-xs" if context == "list" else "px-2 py-0.5 text-[10px]"
+        html = f"""
+        <span class="inline-flex items-center {px} font-bold rounded-full border {status_class}" {trigger_attr}>
+            {spinner}{log.status}
+        </span>
+        """
+        return HTMLResponse(html)
+        
+    elif view == "log":
+        log_output = log.log_output or "Running backup command..."
+        if log.status == "running":
+            trigger_attr = f'hx-get="/backups/status/{log_id}?view=log" hx-trigger="every 2s" hx-swap="outerHTML"'
+        else:
+            trigger_attr = ""
+            
+        html = f"""
+        <pre id="log-output-content-{log_id}" 
+             class="text-xs font-mono whitespace-pre-wrap text-slate-300 bg-slate-900 p-4 rounded-xl border border-slate-800 max-h-60 overflow-y-auto"
+             {trigger_attr}>{log_output}</pre>
+        """
+        return HTMLResponse(html)
+        
+    return HTMLResponse("")
+
+@router.post("/run/group/{group_id}")
 async def trigger_group_backup(
     group_id: int,
     background_tasks: BackgroundTasks,
+    request: Request,
     command_id: int = Form(None),
     session: Session = SessionDep
 ):
     group = session.get(DeviceGroup, group_id)
     if not group:
-         return RedirectResponse(url="/groups?error=Group not found", status_code=303)
+         raise HTTPException(status_code=404, detail="Group not found")
 
-    # Create pending logs for all devices
     from datetime import datetime
     log_map = {}
     if group.devices:
@@ -154,9 +193,16 @@ async def trigger_group_backup(
             log_map[device.id] = backup_log.id
 
     background_tasks.add_task(run_backup_group, group_id, log_map, command_id)
-    return RedirectResponse(url=f"/backups?msg=Group backup started for {group.name}", status_code=303)
+    msg = f"Group backup started for group {group.name}."
+    
+    if request.headers.get("HX-Request"):
+        response = HTMLResponse("")
+        response.headers["HX-Trigger"] = f'{{"refreshList": "", "showToast": {{"message": "{msg}", "type": "info"}}}}'
+        return response
+        
+    return RedirectResponse(url=f"/backups?msg={msg}", status_code=303)
 
-@router.post("/run/{device_id}", response_class=RedirectResponse)
+@router.post("/run/{device_id}")
 async def trigger_backup(
     device_id: int,
     background_tasks: BackgroundTasks,
@@ -166,9 +212,8 @@ async def trigger_backup(
 ):
     device = session.get(Device, device_id)
     if not device:
-         return RedirectResponse(url="/backups?error=Device not found", status_code=303)
+         raise HTTPException(status_code=404, detail="Device not found")
 
-    # Create pending log
     from datetime import datetime
     backup_log = BackupLog(
         device_id=device_id,
@@ -183,8 +228,14 @@ async def trigger_backup(
     session.refresh(backup_log)
 
     background_tasks.add_task(run_backup, device_id, backup_log.id, command_id)
+    msg = f"Backup started for {device.hostname}."
     
-    return RedirectResponse(url=f"/backups?msg=Backup started for {device.hostname}", status_code=303)
+    if request.headers.get("HX-Request"):
+        response = HTMLResponse("")
+        response.headers["HX-Trigger"] = f'{{"refreshList": "", "showToast": {{"message": "{msg}", "type": "info"}}}}'
+        return response
+        
+    return RedirectResponse(url=f"/backups?msg={msg}", status_code=303)
 
 @router.get("/download/{log_id}")
 async def download_backup(log_id: int, session: Session = SessionDep):

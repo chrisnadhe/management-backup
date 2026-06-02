@@ -1,66 +1,86 @@
-{% extends "base.html" %}
+{% extends get_base_template(request) %}
 
 {% block content %}
-<div class="w-full max-w-lg mx-auto mt-10">
-    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">{% if command %}Edit{% else %}New{% endif %} Command</h2>
-        <form method="post">
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
-                    Name
-                </label>
-                <input
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="name" name="name" type="text" placeholder="e.g., Show Running Config"
-                    value="{{ command.name if command else '' }}" required>
-            </div>
-
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="platform">
-                    Platform
-                </label>
-                <select
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="platform" name="platform" required>
-                    <option value="cisco_ios" {% if command and command.platform=='cisco_ios' %}selected{% endif %}>
-                        Cisco IOS</option>
-                    <option value="cisco_nxos" {% if command and command.platform=='cisco_nxos' %}selected{% endif %}>
-                        Cisco NX-OS</option>
-                    <option value="juniper_junos" {% if command and command.platform=='juniper_junos' %}selected{% endif
-                        %}>Juniper JunOS</option>
-                    <option value="arista_eos" {% if command and command.platform=='arista_eos' %}selected{% endif %}>
-                        Arista EOS</option>
-                    <option value="hp_procurve" {% if command and command.platform=='hp_procurve' %}selected{% endif %}>
-                        HP ProCurve</option>
-                    <option value="mikrotik_routeros" {% if command and command.platform=='mikrotik_routeros'
-                        %}selected{% endif %}>Mikrotik RouterOS</option>
-                </select>
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="command_text">
-                    Command
-                </label>
-                <textarea
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    id="command_text" name="command_text" placeholder="e.g., show running-config" required
-                    rows="4">{{ command.command_text if command else '' }}</textarea>
-                <p class="text-gray-600 text-xs italic mt-2">The command to execute on the device to get the
-                    configuration.</p>
-            </div>
-
-            <div class="flex items-center justify-between">
-                <button
-                    class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                    type="submit">
-                    {% if command %}Update{% else %}Create{% endif %}
-                </button>
-                <a class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
-                    href="/commands">
-                    Cancel
-                </a>
-            </div>
-        </form>
+<div class="{% if request.headers.get('HX-Request') %}w-full{% else %}max-w-lg mx-auto mt-10 glass-panel p-8 rounded-2xl shadow-lg bg-white{% endif %}">
+    <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+        <h3 class="text-lg font-bold text-slate-900">{% if command %}Edit{% else %}New{% endif %} Command Template</h3>
+        {% if request.headers.get('HX-Request') %}
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        {% endif %}
     </div>
+
+    <form 
+        method="post" 
+        hx-post="{% if command %}/commands/{{ command.id }}/edit{% else %}/commands/new{% endif %}"
+        {% if request.headers.get('HX-Request') %}
+        hx-target="#commands-table-container"
+        hx-swap="outerHTML"
+        {% endif %}
+        class="space-y-4"
+    >
+        <div>
+            <label class="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-2" for="name">
+                Name
+            </label>
+            <input
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium"
+                id="name" name="name" type="text" placeholder="e.g., Show Running Config"
+                value="{{ command.name if command else '' }}" required>
+        </div>
+
+        <div>
+            <label class="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-2" for="platform">
+                Platform
+            </label>
+            <select
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm"
+                id="platform" name="platform" required>
+                <option value="cisco_ios" {% if command and command.platform=='cisco_ios' %}selected{% endif %}>Cisco IOS</option>
+                <option value="cisco_nxos" {% if command and command.platform=='cisco_nxos' %}selected{% endif %}>Cisco NX-OS</option>
+                <option value="juniper_junos" {% if command and command.platform=='juniper_junos' %}selected{% endif %}>Juniper JunOS</option>
+                <option value="arista_eos" {% if command and command.platform=='arista_eos' %}selected{% endif %}>Arista EOS</option>
+                <option value="hp_procurve" {% if command and command.platform=='hp_procurve' %}selected{% endif %}>HP ProCurve</option>
+                <option value="mikrotik_routeros" {% if command and command.platform=='mikrotik_routeros' %}selected{% endif %}>Mikrotik RouterOS</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-2" for="command_text">
+                Command Script
+            </label>
+            <textarea
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm font-mono"
+                id="command_text" name="command_text" placeholder="e.g., show running-config" required
+                rows="4">{{ command.command_text if command else '' }}</textarea>
+            <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">The command to execute on the remote device to get the configuration text output.</p>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
+            {% if request.headers.get('HX-Request') %}
+            <button 
+                type="button" 
+                onclick="closeModal()" 
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-4 rounded-xl border border-slate-200 transition-all text-sm"
+            >
+                Cancel
+            </button>
+            {% else %}
+            <a 
+                href="/commands" 
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-4 rounded-xl border border-slate-200 transition-all text-sm"
+            >
+                Cancel
+            </a>
+            {% endif %}
+            <button
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-xl shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/25 transition-all text-sm"
+                type="submit"
+            >
+                {% if command %}Update{% else %}Create{% endif %}
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}

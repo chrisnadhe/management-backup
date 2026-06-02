@@ -36,7 +36,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Templates
-templates = Jinja2Templates(directory="app/templates")
+from app.templates import templates
 
 # Include routers
 app.include_router(devices.router)

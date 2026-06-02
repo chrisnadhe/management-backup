@@ -1,0 +1,47 @@
+<div id="groups-table-container">
+    <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                    <th scope="col" class="py-4 px-6 text-left">Group Name</th>
+                    <th scope="col" class="py-4 px-6 text-left">Description</th>
+                    <th scope="col" class="py-4 px-6 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
+                {% for group in groups %}
+                <tr id="group-row-{{ group.id }}" class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-4 px-6 font-semibold text-slate-900">{{ group.name }}</td>
+                    <td class="py-4 px-6 text-slate-500">{{ group.description or '-' }}</td>
+                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                        <div class="inline-flex gap-2">
+                            <button onclick="openBackupModal('{{ group.id }}', '{{ group.name }}')"
+                                class="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs shadow-sm hover:shadow-emerald-600/20 transition-all">
+                                <i class="fas fa-play text-[10px]"></i> Group Backup
+                            </button>
+                            <button
+                                hx-get="/groups/{{ group.id }}/edit"
+                                hx-target="#modal-content"
+                                class="inline-flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-700 font-medium py-1.5 px-3 rounded-lg text-xs border border-slate-200 hover:border-slate-300 transition-all">
+                                <i class="fas fa-edit text-[10px] text-slate-400"></i> Edit
+                            </button>
+                            <button
+                                hx-get="/groups/{{ group.id }}/delete/confirm"
+                                hx-target="#modal-content"
+                                class="inline-flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium py-1.5 px-3 rounded-lg text-xs border border-rose-100 hover:border-rose-200 transition-all">
+                                <i class="fas fa-trash-alt text-[10px] text-rose-400"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="py-8 px-6 text-center text-slate-400 italic bg-white">
+                        No groups found. Click "Add Group" to create one.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

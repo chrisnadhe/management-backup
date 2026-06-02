@@ -1,0 +1,93 @@
+<div id="logs-table-container">
+    <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                    <th scope="col" class="py-4 px-6 text-left">Timestamp</th>
+                    <th scope="col" class="py-4 px-6 text-left">Device</th>
+                    <th scope="col" class="py-4 px-6 text-left">Status</th>
+                    <th scope="col" class="py-4 px-6 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
+                {% for log in logs %}
+                <tr class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-4 px-6 text-slate-600 whitespace-nowrap">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td class="py-4 px-6 font-semibold text-slate-900">
+                        {{ log.device.hostname if log.device else 'Unknown' }}
+                    </td>
+                    <td class="py-4 px-6 font-semibold">
+                        {% if log.status == 'success' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                            <i class="fas fa-check-circle mr-1.5 text-emerald-500"></i> {{ log.status }}
+                        </span>
+                        {% elif log.status == 'running' %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/50">
+                            <i class="fas fa-spinner fa-spin mr-1.5 text-amber-500"></i> {{ log.status }}
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/50">
+                            <i class="fas fa-times-circle mr-1.5 text-rose-500"></i> {{ log.status }}
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                        {% if log.session_log_path %}
+                        <a href="/logs/view/{{ log.id }}"
+                            class="inline-flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold py-1.5 px-3 rounded-lg text-xs border border-slate-200 hover:border-slate-300 transition-all">
+                            <i class="fas fa-file-alt text-slate-400"></i> View Session Log
+                        </a>
+                        {% else %}
+                        <span class="text-slate-400 text-xs italic">No Session Log</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="py-8 px-6 text-center text-slate-400 italic bg-white">
+                        No logs found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-2">
+        <div class="text-xs text-slate-500 font-medium">
+            Showing {{ (page - 1) * limit + 1 if logs else 0 }} to {{ (page - 1) * limit + logs|length }} of {{ total_count }} entries
+        </div>
+        <div class="flex items-center gap-3">
+            {% if page > 1 %}
+            <button
+                hx-get="/logs?page={{ page - 1 }}&q={{ q }}&limit={{ limit }}"
+                hx-target="#logs-table-container"
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+                Previous
+            </button>
+            {% else %}
+            <span class="bg-slate-100/60 text-slate-400 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200/50 cursor-not-allowed">
+                Previous
+            </span>
+            {% endif %}
+
+            <div class="text-xs font-semibold text-slate-600">
+                Page {{ page }} of {{ total_pages if total_pages > 0 else 1 }}
+            </div>
+
+            {% if page < total_pages %}
+            <button
+                hx-get="/logs?page={{ page + 1 }}&q={{ q }}&limit={{ limit }}"
+                hx-target="#logs-table-container"
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+                Next
+            </button>
+            {% else %}
+            <span class="bg-slate-100/60 text-slate-400 font-semibold py-1.5 px-3.5 rounded-lg text-xs border border-slate-200/50 cursor-not-allowed">
+                Next
+            </span>
+            {% endif %}
+        </div>
+    </div>
+</div>

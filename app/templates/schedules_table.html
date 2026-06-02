@@ -1,0 +1,63 @@
+<div id="schedules-table-container">
+    <div class="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm bg-white">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider">
+                <tr>
+                    <th scope="col" class="py-4 px-6 text-left">Schedule Name</th>
+                    <th scope="col" class="py-4 px-6 text-left">Cron Expression</th>
+                    <th scope="col" class="py-4 px-6 text-left">Last Run</th>
+                    <th scope="col" class="py-4 px-6 text-left">Next Run</th>
+                    <th scope="col" class="py-4 px-6 text-left">Status</th>
+                    <th scope="col" class="py-4 px-6 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-sm text-slate-700 bg-white">
+                {% for schedule in schedules %}
+                <tr id="schedule-row-{{ schedule.id }}" class="hover:bg-slate-50/80 transition-colors">
+                    <td class="py-4 px-6 font-semibold text-slate-900">{{ schedule.name }}</td>
+                    <td class="py-4 px-6 font-mono text-slate-500 text-xs">{{ schedule.cron_expression }}</td>
+                    <td class="py-4 px-6 text-xs text-slate-500">
+                        {{ schedule.last_run.strftime('%Y-%m-%d %H:%M') if schedule.last_run else '-' }}
+                    </td>
+                    <td class="py-4 px-6 text-xs font-bold text-indigo-600">
+                        {{ schedule.next_run.strftime('%Y-%m-%d %H:%M') if schedule.next_run else '-' }}
+                    </td>
+                    <td class="py-4 px-6">
+                        {% if schedule.enabled %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            Enabled
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200">
+                            Disabled
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-right whitespace-nowrap">
+                        <div class="inline-flex gap-2">
+                            <button
+                                hx-get="/schedules/{{ schedule.id }}/edit"
+                                hx-target="#modal-content"
+                                class="inline-flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-700 font-medium py-1.5 px-3 rounded-lg text-xs border border-slate-200 hover:border-slate-300 transition-all">
+                                <i class="fas fa-edit text-[10px] text-slate-400"></i> Edit
+                            </button>
+                            <button
+                                hx-get="/schedules/{{ schedule.id }}/delete/confirm"
+                                hx-target="#modal-content"
+                                class="inline-flex items-center gap-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium py-1.5 px-3 rounded-lg text-xs border border-rose-100 hover:border-rose-200 transition-all">
+                                <i class="fas fa-trash-alt text-[10px] text-rose-400"></i> Delete
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="py-8 px-6 text-center text-slate-400 italic bg-white">
+                        No schedules found. Click "Add Schedule" to create one.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

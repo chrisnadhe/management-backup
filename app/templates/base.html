@@ -1,95 +1,227 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NetBackup Manager</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX CDN -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
                     colors: {
-                        orange: {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            200: '#fed7aa',
-                            300: '#fdba74',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            800: '#9a3412',
-                            900: '#7c2d12',
-                            950: '#431407',
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        indigo: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
                         }
                     }
                 }
             }
         }
     </script>
+
+    <!-- Global Helper Scripts & Event Listeners -->
+    <script>
+        // Modal Helper Functions
+        function openModal() {
+            const modal = document.getElementById('modal-container');
+            if (modal) {
+                modal.classList.remove('modal-hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modal-container');
+            if (modal) {
+                modal.classList.add('modal-hidden');
+                document.body.classList.remove('overflow-hidden');
+                // Clean modal contents after transition completes
+                setTimeout(() => {
+                    const content = document.getElementById('modal-content');
+                    if (content) content.innerHTML = '';
+                }, 300);
+            }
+        }
+
+        // Global Toast Notification Helper
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification flex items-center p-4 rounded-xl shadow-lg border text-sm font-medium glass-panel transition-all duration-300 pointer-events-auto`;
+            
+            let icon = '';
+            let textClass = 'text-slate-800';
+            
+            if (type === 'success') {
+                icon = `<svg class="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                toast.classList.add('border-emerald-500/20', 'bg-emerald-50/90');
+            } else if (type === 'error' || type === 'danger') {
+                icon = `<svg class="w-5 h-5 text-rose-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
+                toast.classList.add('border-rose-500/20', 'bg-rose-50/90');
+            } else {
+                icon = `<svg class="w-5 h-5 text-indigo-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                toast.classList.add('border-indigo-500/20', 'bg-indigo-50/90');
+            }
+            
+            toast.innerHTML = `
+                ${icon}
+                <span class="flex-grow ${textClass}">${message}</span>
+                <button onclick="this.parentElement.remove()" class="ml-4 text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto-dismiss after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                toast.addEventListener('animationend', () => {
+                    toast.remove();
+                });
+            }, 4000);
+        }
+
+        // Register Event Listeners exactly once on document root
+        if (!window.htmxListenersRegistered) {
+            document.addEventListener('htmx:afterOnLoad', function(evt) {
+                if (evt.detail.target.id === 'modal-content') {
+                    openModal();
+                }
+            });
+
+            document.addEventListener('closeModal', function() {
+                closeModal();
+            });
+
+            document.addEventListener('showToast', function(evt) {
+                const data = evt.detail;
+                showToast(data.message, data.type || data.level || 'success');
+            });
+
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeModal();
+                }
+            });
+
+            window.htmxListenersRegistered = true;
+        }
+    </script>
 </head>
 
-<body class="bg-gray-100 font-sans leading-normal tracking-normal flex flex-col min-h-screen">
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen antialiased">
 
-    <nav class="bg-orange-600 p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="/" class="text-white text-2xl font-bold">NetBackup</a>
-            <div class="flex space-x-6 text-white font-medium">
-                <a href="/" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                </a>
-                <a href="/devices"
-                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-server mr-2"></i> Devices
-                </a>
-                <a href="/groups"
-                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-layer-group mr-2"></i> Groups
-                </a>
-                <a href="/credentials"
-                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-key mr-2"></i> Credentials
-                </a>
-                <a href="/commands"
-                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-terminal mr-2"></i> Commands
-                </a>
-                <a href="/schedules"
-                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-calendar-alt mr-2"></i> Schedules
-                </a>
-                <a href="/backups"
-                    class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-history mr-2"></i> Backups
-                </a>
-                <a href="/logs" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-orange-700 text-white"
-                    hx-boost="true">
-                    <i class="fas fa-file-alt mr-2"></i> Logs
-                </a>
+    <!-- Premium Navbar -->
+    <nav class="bg-slate-900/95 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Brand -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center gap-2.5 text-white font-extrabold text-xl tracking-tight hover:opacity-95 transition-all">
+                        <div class="bg-indigo-600 p-2 rounded-xl shadow-md shadow-indigo-600/30 flex items-center justify-center">
+                            <i class="fas fa-shield-halved text-sm text-white"></i>
+                        </div>
+                        <span>NetBackup</span>
+                    </a>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-1.5 font-medium">
+                        {% set current_path = request.url.path %}
+                        
+                        <a href="/" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path == '/' %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-tachometer-alt mr-1.5 opacity-70"></i> Dashboard
+                        </a>
+                        <a href="/devices" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/devices') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-server mr-1.5 opacity-70"></i> Devices
+                        </a>
+                        <a href="/groups" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/groups') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-layer-group mr-1.5 opacity-70"></i> Groups
+                        </a>
+                        <a href="/credentials" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/credentials') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-key mr-1.5 opacity-70"></i> Credentials
+                        </a>
+                        <a href="/commands" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/commands') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-terminal mr-1.5 opacity-70"></i> Commands
+                        </a>
+                        <a href="/schedules" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/schedules') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-calendar-alt mr-1.5 opacity-70"></i> Schedules
+                        </a>
+                        <a href="/backups" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/backups') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-history mr-1.5 opacity-70"></i> Backups
+                        </a>
+                        <a href="/logs" class="px-3.5 py-2 rounded-xl text-sm transition-all duration-200 {% if current_path.startswith('/logs') %}bg-slate-800 text-white shadow-inner{% else %}text-slate-300 hover:bg-slate-800/60 hover:text-white{% endif %}" hx-boost="true">
+                            <i class="fas fa-file-alt mr-1.5 opacity-70"></i> Logs
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container mx-auto mt-8 p-4 flex-grow">
+    <!-- Main Content Container -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
-    <footer class="bg-gray-800 text-white p-4 mt-8">
-        <div class="container mx-auto text-center">
-            &copy; 2026 NetBackup Manager
+    <!-- Premium Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm font-medium">
+            <p>&copy; 2026 NetBackup Manager &bull; Polished with HTMX &amp; Tailwind</p>
         </div>
     </footer>
+
+    <!-- Global Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Global Dynamic Modal Container -->
+    <div id="modal-container" class="fixed inset-0 z-50 flex items-center justify-center modal-hidden" aria-modal="true" role="dialog">
+        <!-- Overlay -->
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+        <!-- Modal wrapper -->
+        <div id="modal-content" class="relative z-10 w-full max-w-xl mx-4 glass-panel rounded-2xl shadow-2xl p-6 modal-content bg-white">
+            <!-- Asynchronously loaded form content here -->
+        </div>
+    </div>
 
 </body>
 

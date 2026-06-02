@@ -1,17 +1,38 @@
-{% extends "base.html" %}
+{% extends get_base_template(request) %}
 
 {% block content %}
-<div class="bg-white shadow-md rounded my-6 p-6">
-    <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-gray-800">Session Log: {{ log.device.hostname }} - {{
-            log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</h2>
-        <a href="/logs" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">Back</a>
+<div class="glass-panel p-6 rounded-2xl shadow-sm space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pb-4 border-b border-slate-100">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Session Log</h2>
+            <p class="text-slate-500 text-sm">
+                {{ log.device.hostname if log.device else 'Unknown Device' }} &bull; 
+                {{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+            </p>
+        </div>
+        <a href="/logs" class="w-full sm:w-auto text-center bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-5 rounded-xl border border-slate-200 hover:border-slate-300 transition-all text-sm shadow-sm" hx-boost="true">
+            <i class="fas fa-arrow-left mr-1 text-slate-400"></i> Back to Logs
+        </a>
     </div>
 
-    <div class="mb-4">
-        <h3 class="font-bold text-lg mb-2">Netmiko Session Output:</h3>
-        <pre
-            class="bg-gray-900 text-green-400 p-4 rounded overflow-auto h-96 whitespace-pre-wrap">{{ session_content }}</pre>
+    <div class="space-y-2">
+        <div class="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <span>Terminal Trace (Netmiko)</span>
+            {% if log.status == 'running' %}
+            <span class="text-amber-600 animate-pulse flex items-center gap-1.5 font-bold">
+                <i class="fas fa-spinner fa-spin"></i> Polling live trace...
+            </span>
+            {% endif %}
+        </div>
+        
+        <pre id="session-log-content-{{ log.id }}"
+             class="bg-slate-950 text-emerald-400 p-5 rounded-2xl overflow-auto h-96 whitespace-pre-wrap border border-slate-800/80 font-mono text-xs shadow-inner leading-relaxed"
+             {% if log.status == 'running' %}
+             hx-get="/logs/content/{{ log.id }}"
+             hx-trigger="every 2s"
+             hx-target="this"
+             hx-swap="outerHTML"
+             {% endif %}>{{ session_content or 'Establishing Netmiko session trace output...' }}</pre>
     </div>
 </div>
 {% endblock %}

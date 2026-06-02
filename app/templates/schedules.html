@@ -1,56 +1,27 @@
-{% extends "base.html" %}
+{% extends get_base_template(request) %}
 
 {% block content %}
-<div class="bg-white shadow-md rounded my-6">
-    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-        <h2 class="text-2xl font-bold text-gray-800">Schedules</h2>
-        <a href="/schedules/new" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded">
-            Add Schedule
-        </a>
+<div class="space-y-6">
+    <!-- Header Card -->
+    <div class="glass-panel p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Schedules</h2>
+            <p class="text-slate-500 text-sm">Automate recurring backups using standard Unix cron expressions for custom devices or entire groups.</p>
+        </div>
+        
+        <div>
+            <button 
+                hx-get="/schedules/new" 
+                hx-target="#modal-content"
+                class="w-full sm:w-auto inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl text-sm shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/25 transition-all">
+                <i class="fas fa-plus"></i> Add Schedule
+            </button>
+        </div>
     </div>
-    <div class="overflow-x-auto">
-        <table class="min-w-full bg-white">
-            <thead class="bg-gray-800 text-white">
-                <tr>
-                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Name</th>
-                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Cron</th>
-                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Last Run</th>
-                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Next Run</th>
-                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
-                    <th class="w-1/6 text-left py-3 px-4 uppercase font-semibold text-sm">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="text-gray-700">
-                {% for schedule in schedules %}
-                <tr class="{% if loop.index is odd %}bg-gray-100{% endif %} hover:bg-gray-200">
-                    <td class="w-1/6 text-left py-3 px-4">{{ schedule.name }}</td>
-                    <td class="w-1/6 text-left py-3 px-4 font-mono text-xs">{{ schedule.cron_expression }}</td>
-                    <td class="w-1/6 text-left py-3 px-4 text-xs">
-                        {{ schedule.last_run.strftime('%Y-%m-%d %H:%M') if schedule.last_run else '-' }}
-                    </td>
-                    <td class="w-1/6 text-left py-3 px-4 text-xs font-bold text-orange-600">
-                        {{ schedule.next_run.strftime('%Y-%m-%d %H:%M') if schedule.next_run else '-' }}
-                    </td>
-                    <td class="w-1/6 text-left py-3 px-4">
-                        {% if schedule.enabled %}
-                        <span class="bg-green-200 text-green-600 py-1 px-3 rounded-full text-xs">Enabled</span>
-                        {% else %}
-                        <span class="bg-red-200 text-red-600 py-1 px-3 rounded-full text-xs">Disabled</span>
-                        {% endif %}
-                    </td>
-                    <td class="w-1/4 text-left py-3 px-4 flex gap-2">
-                        <a href="/schedules/{{ schedule.id }}/edit"
-                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-xs">Edit</a>
-                        <form action="/schedules/{{ schedule.id }}/delete" method="post"
-                            onsubmit="return confirm('Are you sure?');">
-                            <button type="submit"
-                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <!-- Table Container (Initially includes the table partial) -->
+    <div id="schedules-table-container">
+        {% include "schedules_table.html" %}
     </div>
 </div>
 {% endblock %}

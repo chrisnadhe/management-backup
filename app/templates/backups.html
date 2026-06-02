@@ -1,52 +1,69 @@
-{% extends "base.html" %}
+{% extends get_base_template(request) %}
 
 {% block content %}
-<div class="bg-white shadow-md rounded my-6">
-    <div class="p-6 border-b border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-4">
-            <h2 class="text-2xl font-bold text-gray-800">Backups</h2>
-            <div class="flex bg-gray-100 rounded-lg p-1">
-                <a href="/backups?view=list&q={{ q }}" 
-                   class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors {% if view == 'list' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+<div class="space-y-6">
+    <!-- Header Card -->
+    <div class="glass-panel p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Backups</h2>
+                <p class="text-slate-500 text-sm">Download configuration archives, check execution status, and review logs.</p>
+            </div>
+            
+            <!-- View Mode Switch Tabs -->
+            <div class="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto self-stretch sm:self-center">
+                <button 
+                    hx-get="/backups?view=list&q={{ q }}" 
+                    hx-target="#backups-table-container"
+                    hx-push-url="true"
+                    class="flex-1 sm:flex-none text-center px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none {% if view == 'list' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-500 hover:text-slate-800{% endif %}"
+                    id="list-view-tab"
+                    onclick="switchTabActive(this)">
                     List View
-                </a>
-                <a href="/backups?view=grouped&q={{ q }}" 
-                   class="px-4 py-1.5 rounded-md text-sm font-medium transition-colors {% if view == 'grouped' %}bg-white text-gray-900 shadow-sm{% else %}text-gray-500 hover:text-gray-700{% endif %}">
+                </button>
+                <button 
+                    hx-get="/backups?view=grouped&q={{ q }}" 
+                    hx-target="#backups-table-container"
+                    hx-push-url="true"
+                    class="flex-1 sm:flex-none text-center px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none {% if view == 'grouped' %}bg-white text-slate-950 shadow-sm{% else %}text-slate-500 hover:text-slate-800{% endif %}"
+                    id="grouped-view-tab"
+                    onclick="switchTabActive(this)">
                     Grouped View
-                </a>
+                </button>
             </div>
         </div>
-        <div class="flex flex-1 max-w-md w-full">
-            <form action="/backups" method="get" class="flex w-full gap-2">
-                <input type="text" name="q" value="{{ q }}" placeholder="Search device, status, or log..."
-                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded">
-                    Search
-                </button>
-                {% if q %}
-                <a href="/backups"
-                    class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded flex items-center justify-center">
-                    Clear
-                </a>
-                {% endif %}
-            </form>
-        </div>
-        <div class="flex gap-2">
-            <!-- Form to trigger backup for a specific device -->
-            <form action="/backups/run/all" method="post" class="flex gap-2">
-                <!-- triggering all not implemented yet, placeholder -->
-            </form>
-            <div class="relative">
-                <button class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded"
-                    onclick="document.getElementById('device-select').classList.toggle('hidden')">
-                    Run Backup...
+        
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <!-- Active Search Input -->
+            <div class="relative w-full sm:w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <i class="fas fa-search text-xs"></i>
+                </div>
+                <input 
+                    type="text" 
+                    name="q" 
+                    value="{{ q }}" 
+                    hx-get="/backups" 
+                    hx-trigger="keyup changed delay:300ms, search" 
+                    hx-target="#backups-table-container"
+                    placeholder="Search device, status..."
+                    class="w-full pl-9 pr-4 py-2 bg-slate-100/80 hover:bg-slate-200/50 focus:bg-white border border-transparent focus:border-indigo-500/30 rounded-xl text-sm transition-all focus:ring-4 focus:ring-indigo-500/10 focus:outline-none"
+                    id="search-input"
+                >
+            </div>
+            
+            <div class="relative w-full sm:w-auto">
+                <button 
+                    onclick="document.getElementById('device-select').classList.toggle('hidden'); event.stopPropagation();"
+                    class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl text-sm shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/25 transition-all">
+                    <i class="fas fa-play text-xs opacity-80"></i> Run Backup...
                 </button>
                 <div id="device-select"
-                    class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border">
+                    class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl z-10 border border-slate-150 py-1.5">
                     {% for device in devices %}
                     <button type="button"
                         onclick="openBackupModal('{{ device.id }}', '{{ device.hostname }}', '{{ device.device_type }}')"
-                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">
+                        class="block px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 w-full text-left transition-colors">
                         {{ device.hostname }}
                     </button>
                     {% endfor %}
@@ -55,365 +72,141 @@
         </div>
     </div>
 
-    <!-- Flash Messages -->
-    <div id="flash-message" class="px-6 pt-4 hidden">
-        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4" role="alert">
-            <p id="flash-text"></p>
+    <!-- Table Container (Initially includes the table partial) -->
+    <div id="backups-table-container">
+        {% include "backups_table.html" %}
+    </div>
+</div>
+
+<!-- Dynamic Backup Modal (Client-side trigger, HTMX submit) -->
+<div id="backupModal" class="fixed inset-0 z-50 flex items-center justify-center modal-hidden" aria-modal="true" role="dialog">
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="closeBackupModal()"></div>
+    <!-- Modal wrapper -->
+    <div class="relative z-10 w-full max-w-md mx-4 glass-panel rounded-2xl shadow-2xl p-6 bg-white modal-content">
+        <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+            <h3 class="text-lg font-bold text-slate-900" id="modalTitle">Run Backup</h3>
+            <button onclick="closeBackupModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-    </div>
-
-    </div>
-
-    {% if view == 'grouped' %}
-    <!-- Grouped View -->
-    <div class="p-6">
-        {% for item in grouped_data %}
-        <div class="mb-8 last:mb-0">
-            <div class="flex items-center gap-2 mb-4">
-                <div class="h-8 w-1 bg-gray-800 rounded-full"></div>
-                <h3 class="text-xl font-bold text-gray-800">{{ item.group.name }}</h3>
-                <span class="text-sm text-gray-500 font-normal">({{ item.devices|length }} devices)</span>
+        
+        <form id="backupForm" hx-post="" hx-swap="none" hx-on::after-request="closeBackupModal();">
+            <div class="mb-5">
+                <label class="block text-slate-700 text-sm font-semibold mb-2">Command Template (Optional)</label>
+                <select name="command_id" id="commandSelect"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm">
+                    <option value="">-- All Commands --</option>
+                    {% for cmd in commands %}
+                    <option value="{{ cmd.id }}" data-platform="{{ cmd.platform }}">{{ cmd.name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">Select a specific command template or leave empty to run all commands for the platform.</p>
             </div>
             
-            <div class="grid gap-4">
-                {% for device_item in item.devices %}
-                {% set device = device_item.device %}
-                {% set latest_backups = device_item.latest_backups %}
-                <div class="border rounded-lg overflow-hidden border-gray-200 bg-gray-50/50">
-                    <div class="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors"
-                         onclick="toggleDeviceBackups('device-{{ device.id }}')">
-                        <div class="flex items-center gap-4">
-                            <div class="p-2 bg-white rounded-md shadow-sm border border-gray-100">
-                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                                </svg>
-                            </div>
-                            <div>
-                                <div class="font-bold text-gray-900">{{ device.hostname }}</div>
-                                <div class="text-xs text-gray-500">{{ device.ip_address }} • {{ device.device_type }}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            {% if latest_backups %}
-                                {% set last = latest_backups[0] %}
-                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold 
-                                    {% if last.status == 'success' %}bg-green-100 text-green-700
-                                    {% elif last.status == 'running' %}bg-yellow-100 text-yellow-700
-                                    {% else %}bg-red-100 text-red-700{% endif %}">
-                                    Last: {{ last.status }} ({{ last.timestamp.strftime('%Y-%m-%d %H:%M') if last.timestamp else 'N/A' }})
-                                </span>
-                            {% else %}
-                                <span class="text-xs text-gray-400">No backups yet</span>
-                            {% endif %}
-                            <svg id="arrow-device-{{ device.id }}" class="w-5 h-5 text-gray-400 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
-                    
-                    <div id="device-{{ device.id }}" class="hidden border-t border-gray-200 bg-white">
-                        {% if latest_backups %}
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
-                                    <th class="px-6 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                                {% for log in latest_backups %}
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-2 whitespace-nowrap text-xs text-gray-600">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'N/A' }}</td>
-                                    <td class="px-6 py-2 whitespace-nowrap">
-                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase
-                                            {% if log.status == 'success' %}bg-green-100 text-green-700
-                                            {% elif log.status == 'running' %}bg-yellow-100 text-yellow-700
-                                            {% else %}bg-red-100 text-red-700{% endif %}">
-                                            {{ log.status }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-2 whitespace-nowrap text-xs">
-                                        {% if log.file_path %}
-                                        <a href="/backups/download/{{ log.id }}" class="text-blue-600 hover:underline">Download</a>
-                                        {% else %}-{% endif %}
-                                    </td>
-                                    <td class="px-6 py-2 whitespace-nowrap text-xs">
-                                        <button onclick="toggleRow('log-{{ log.id }}')" class="text-gray-500 hover:text-gray-700">View Log</button>
-                                    </td>
-                                </tr>
-                                <tr id="log-{{ log.id }}" class="hidden bg-gray-50">
-                                    <td colspan="4" class="px-6 py-4">
-                                        <div class="text-[10px] font-mono whitespace-pre-wrap text-gray-700 bg-white p-3 rounded border max-h-48 overflow-y-auto">
-                                            {{ log.log_output }}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        {% else %}
-                        <div class="p-8 text-center text-gray-400 text-sm italic">
-                            No backup history available for this device.
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <!-- List View (Original) -->
-    <div class="overflow-x-auto">
-        <table class="min-w-full bg-white">
-            <thead class="bg-gray-800 text-white">
-                <tr>
-                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Time</th>
-                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Device</th>
-                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Source</th>
-                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Status</th>
-                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">File</th>
-                    <th class="w-1/5 text-left py-3 px-4 uppercase font-semibold text-sm">Log</th>
-                </tr>
-            </thead>
-            <tbody class="text-gray-700">
-                {% for log in backups %}
-                <tr class="{% if loop.index is odd %}bg-gray-100{% endif %} hover:bg-gray-200 cursor-pointer transition-colors"
-                    onclick="toggleRow('log-{{ log.id }}')">
-                    <td class="w-1/5 text-left py-3 px-4">{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                    <td class="w-1/5 text-left py-3 px-4">
-                        {% if log.device %}{{ log.device.hostname }}{% else %}Unknown Device{% endif %}
-                    </td>
-                    <td class="w-1/5 text-left py-3 px-4">
-                        {% if log.schedule_id %}
-                        <span class="text-blue-600 font-semibold">Sch: {{ log.schedule.name if log.schedule else
-                            log.schedule_id }}</span>
-                        {% else %}
-                        <span class="text-gray-500">Manual</span>
-                        {% endif %}
-                    </td>
-                    <td class="w-1/5 text-left py-3 px-4">
-                        <span class="inline-block rounded-full px-3 py-1 text-sm font-semibold text-white 
-                            {% if log.status == 'success' %}bg-green-500
-                            {% elif log.status == 'running' %}bg-yellow-500
-                            {% else %}bg-red-500{% endif %}">
-                            {{ log.status }}
-                        </span>
-                    </td>
-                    <td class="w-1/5 text-left py-3 px-4">
-                        {% if log.file_path %}
-                        <a href="/backups/download/{{ log.id }}" class="text-blue-500 hover:text-blue-800"
-                            onclick="event.stopPropagation()">Download</a>
-                        {% else %}
-                        -
-                        {% endif %}
-                    </td>
-                    <td class="w-1/5 text-left py-3 px-4 text-xs font-mono">
-                        <div class="flex items-center">
-                            <span class="truncate max-w-xs mr-2">{{ (log.log_output or '') | truncate(50, True, '...')
-                                }}</span>
-                            <span class="text-gray-500 text-xs transform transition-transform duration-200"
-                                id="icon-log-{{ log.id }}">
-                                &#9660; <!-- Down Arrow -->
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-                <!-- Expandable Row -->
-                <tr id="log-{{ log.id }}" class="hidden bg-gray-50">
-                    <td colspan="5" class="px-6 py-4 border-b border-gray-200">
-                        <div
-                            class="text-sm font-mono whitespace-pre-wrap text-gray-700 bg-white p-4 rounded border overflow-x-auto max-h-96">
-                            <strong>Full Log:</strong><br>
-                            {{ log.log_output }}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Pagination -->
-    <div class="px-6 py-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div class="text-sm text-gray-600">
-            Showing {{ (page - 1) * limit + 1 if backups else 0 }} to {{ (page - 1) * limit + backups|length }} of {{
-            total_count }} entries
-        </div>
-        <div class="flex gap-2">
-            {% if page > 1 %}
-            <a href="/backups?page={{ page - 1 }}&q={{ q }}&limit={{ limit }}&view=list"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded text-sm transition-colors">
-                Previous
-            </a>
-            {% else %}
-            <span
-                class="bg-gray-100 text-gray-400 font-bold py-2 px-4 rounded text-sm cursor-not-allowed">Previous</span>
-            {% endif %}
-
-            <div class="flex items-center gap-1 text-sm font-medium">
-                Page <span class="text-gray-900">{{ page }}</span> of {{ total_pages if total_pages > 0 else 1 }}
-            </div>
-
-            {% if page < total_pages %} <a href="/backups?page={{ page + 1 }}&q={{ q }}&limit={{ limit }}&view=list"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded text-sm transition-colors">
-                Next
-                </a>
-                {% else %}
-                <span
-                    class="bg-gray-100 text-gray-400 font-bold py-2 px-4 rounded text-sm cursor-not-allowed">Next</span>
-                {% endif %}
-        </div>
-    </div>
-    {% endif %}
-</div>
-</div>
-<!-- Backup Modal -->
-<div id="backupModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden"
-    style="z-index: 50;">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Run Backup</h3>
-            <div class="mt-2 text-left">
-                <form id="backupForm" method="post">
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Command Template (Optional)</label>
-                        <select name="command_id" id="commandSelect"
-                            class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                            <option value="">-- All Commands --</option>
-                            {% for cmd in commands %}
-                            <option value="{{ cmd.id }}" data-platform="{{ cmd.platform }}">{{ cmd.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">Select a specific command template or leave empty to run
-                            all commands for the platform.</p>
-                    </div>
-                    <div class="items-center px-4 py-3">
-                        <button id="ok-btn" type="submit"
-                            class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300">
-                            Start Backup
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="items-center px-4 py-3">
-                <button onclick="closeBackupModal()"
-                    class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300">
+            <div class="flex justify-end gap-3 border-t border-slate-100 pt-4 mt-6">
+                <button type="button" onclick="closeBackupModal()"
+                    class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-4 rounded-xl border border-slate-200 transition-all text-sm">
                     Cancel
                 </button>
+                <button type="submit"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-5 rounded-xl shadow-lg shadow-emerald-600/15 hover:shadow-emerald-600/25 transition-all text-sm flex items-center gap-1.5">
+                    <i class="fas fa-play text-[10px]"></i> Start Backup
+                </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
 <script>
-    // Close dropdown when clicking outside
+    // Tab styling toggle JS helper
+    function switchTabActive(clickedBtn) {
+        const parent = clickedBtn.parentElement;
+        const buttons = parent.querySelectorAll('button');
+        buttons.forEach(btn => {
+            btn.className = "flex-1 sm:flex-none text-center px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none text-slate-500 hover:text-slate-800";
+        });
+        clickedBtn.className = "flex-1 sm:flex-none text-center px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 focus:outline-none bg-white text-slate-950 shadow-sm";
+    }
+
+    // Dropdown close logic
     document.addEventListener('click', function (event) {
-        var dropdown = document.getElementById('device-select');
-        var button = event.target.closest('button');
-        if (!button && !dropdown.contains(event.target)) {
+        const dropdown = document.getElementById('device-select');
+        if (dropdown && !dropdown.classList.contains('hidden')) {
             dropdown.classList.add('hidden');
         }
     });
 
+    // Expandable logs
     function toggleRow(rowId) {
         const row = document.getElementById(rowId);
         const icon = document.getElementById('icon-' + rowId);
 
         if (row.classList.contains('hidden')) {
             row.classList.remove('hidden');
-            if (icon) icon.style.transform = 'rotate(180deg)';
+            if (icon) icon.className = 'fas fa-chevron-up transition-transform duration-200 text-xs text-indigo-600';
         } else {
             row.classList.add('hidden');
-            if (icon) icon.style.transform = 'rotate(0deg)';
-        }
-    }
-
-    function toggleDeviceBackups(deviceId) {
-        const content = document.getElementById(deviceId);
-        const arrow = document.getElementById('arrow-' + deviceId);
-        
-        if (content.classList.contains('hidden')) {
-            content.classList.remove('hidden');
-            if (arrow) arrow.style.transform = 'rotate(180deg)';
-        } else {
-            content.classList.add('hidden');
-            if (arrow) arrow.style.transform = 'rotate(0deg)';
+            if (icon) icon.className = 'fas fa-chevron-down transition-transform duration-200 text-xs text-slate-400';
         }
     }
 
     // Modal Control
-    function openBackupModal(deviceId, hostname, deviceType) {
-        // Hide device select
-        document.getElementById('device-select').classList.add('hidden');
-
+    function openBackupModal(targetId, name, deviceType) {
         document.getElementById('backupModal').classList.remove('hidden');
-        document.getElementById('modalTitle').innerText = 'Run Backup: ' + hostname;
-        document.getElementById('backupForm').action = '/backups/run/' + deviceId;
+        document.body.classList.add('overflow-hidden');
+        
+        document.getElementById('modalTitle').innerText = 'Run Backup: ' + name;
+        
+        const form = document.getElementById('backupForm');
+        
+        // Check if group backup or device backup
+        if (targetId.startsWith('group-')) {
+            const groupId = targetId.split('-')[1];
+            form.setAttribute('hx-post', '/backups/run/group/' + groupId);
+            // Hide specific filters since it is a group
+            const select = document.getElementById('commandSelect');
+            const options = select.getElementsByTagName('option');
+            for (let i = 0; i < options.length; i++) {
+                options[i].style.display = 'block';
+                options[i].disabled = false;
+            }
+        } else {
+            form.setAttribute('hx-post', '/backups/run/' + targetId);
+            // Filter platform command options
+            const select = document.getElementById('commandSelect');
+            const options = select.getElementsByTagName('option');
+            for (let i = 0; i < options.length; i++) {
+                const opt = options[i];
+                if (opt.value === "") continue;
 
-        // Filter commands
-        const select = document.getElementById('commandSelect');
-        const options = select.getElementsByTagName('option');
-
-        for (let i = 0; i < options.length; i++) {
-            const opt = options[i];
-            if (opt.value === "") continue; // Always show default
-
-            const platform = opt.getAttribute('data-platform');
-            if (platform === deviceType) {
-                opt.style.display = 'block';
-                opt.disabled = false;
-            } else {
-                opt.style.display = 'none';
-                opt.disabled = true;
+                const platform = opt.getAttribute('data-platform');
+                if (platform === deviceType) {
+                    opt.style.display = 'block';
+                    opt.disabled = false;
+                } else {
+                    opt.style.display = 'none';
+                    opt.disabled = true;
+                }
             }
         }
 
-        // Reset selection
-        select.value = "";
+        document.getElementById('commandSelect').value = "";
+        htmx.process(form);
     }
 
     function closeBackupModal() {
-        document.getElementById('backupModal').classList.add('hidden');
-    }
-
-    // Close on click outside modal
-    window.addEventListener('click', function (event) {
         const modal = document.getElementById('backupModal');
-        if (event.target == modal) {
-            closeBackupModal();
+        modal.classList.add('modal-hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
+    
+    // Inject active search parameters on view triggers
+    document.addEventListener('htmx:configRequest', function(evt) {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput && searchInput.value) {
+            evt.detail.parameters['q'] = searchInput.value;
         }
     });
-
-    // Check for query params to show flash message
-    const urlParams = new URLSearchParams(window.location.search);
-    const msg = urlParams.get('msg');
-    const error = urlParams.get('error');
-
-    if (msg || error) {
-        const flashDiv = document.getElementById('flash-message');
-        const flashText = document.getElementById('flash-text');
-
-        if (msg) {
-            flashText.innerText = msg;
-            flashDiv.querySelector('div').classList.add('bg-blue-100', 'border-blue-500', 'text-blue-700');
-        } else if (error) {
-            flashText.innerText = error;
-            flashDiv.querySelector('div').classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-700');
-            flashDiv.querySelector('div').classList.add('bg-red-100', 'border-red-500', 'text-red-700');
-        }
-
-        flashDiv.classList.remove('hidden');
-
-        // Auto hide after 5 seconds
-        setTimeout(() => {
-            flashDiv.classList.add('hidden');
-            // Optional: clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }, 5000);
-    }
 </script>
 {% endblock %}

@@ -1,0 +1,48 @@
+<div>
+    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+        <h3 class="text-lg font-bold text-slate-900">Import Devices</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
+    
+    <div class="mb-5 text-sm text-slate-500">
+        <p class="mb-3 leading-relaxed">
+            Upload a CSV file to import multiple devices at once. The CSV header format must contain:
+            <code class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono text-xs">hostname</code>,
+            <code class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono text-xs">ip_address</code>,
+            <code class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono text-xs">port</code>,
+            <code class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono text-xs">device_type</code>,
+            <code class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono text-xs">credential_name</code>, and
+            <code class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-700 font-mono text-xs">group_name</code>.
+        </p>
+        <a href="/devices/template" class="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 font-semibold hover:underline">
+            <i class="fas fa-file-download text-xs"></i> Download CSV Template
+        </a>
+    </div>
+    
+    <form 
+        hx-post="/devices/import" 
+        hx-encoding="multipart/form-data" 
+        hx-target="#devices-table-container"
+        hx-swap="outerHTML"
+        class="space-y-4"
+    >
+        <div>
+            <label class="block text-slate-700 text-xs font-bold uppercase tracking-wider mb-2">Select CSV File</label>
+            <input type="file" name="file" accept=".csv" required
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-700 leading-tight focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all text-sm font-medium">
+        </div>
+        
+        <div class="flex justify-end gap-3 border-t border-slate-100 pt-4 mt-6">
+            <button type="button" onclick="closeModal()"
+                class="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-4 rounded-xl border border-slate-200 transition-all text-sm">
+                Cancel
+            </button>
+            <button type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-xl shadow-lg shadow-indigo-600/15 hover:shadow-indigo-600/25 transition-all text-sm">
+                Upload and Import
+            </button>
+        </div>
+    </form>
+</div>
