@@ -171,12 +171,14 @@ async def trigger_group_backup(
     group_id: int,
     background_tasks: BackgroundTasks,
     request: Request,
-    command_id: int = Form(None),
+    command_id_str: str = Form(None, alias="command_id"),
     session: Session = SessionDep
 ):
     group = session.get(DeviceGroup, group_id)
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
+        
+    command_id = int(command_id_str) if command_id_str and command_id_str.isdigit() else None
 
     log_map = {}
     if group.devices:
@@ -211,12 +213,14 @@ async def trigger_backup(
     device_id: int,
     background_tasks: BackgroundTasks,
     request: Request,
-    command_id: int = Form(None),
+    command_id_str: str = Form(None, alias="command_id"),
     session: Session = SessionDep
 ):
     device = session.get(Device, device_id)
     if not device:
         raise HTTPException(status_code=404, detail="Device not found")
+        
+    command_id = int(command_id_str) if command_id_str and command_id_str.isdigit() else None
 
     backup_log = BackupLog(
         device_id=device_id,
@@ -419,9 +423,10 @@ async def trigger_bulk_backup(
     background_tasks: BackgroundTasks,
     request: Request,
     device_ids: list[int] = Form(...),
-    command_id: int = Form(None),
+    command_id_str: str = Form(None, alias="command_id"),
     session: Session = SessionDep
 ):
+    command_id = int(command_id_str) if command_id_str and command_id_str.isdigit() else None
     log_ids = []
     for device_id in device_ids:
         device = session.get(Device, device_id)
