@@ -222,7 +222,12 @@ async def delete_user(request: Request, user_id: int, session: Session = Session
         logger.info(f"User '{username}' deleted")
 
         if request.headers.get("HX-Request"):
-            response = HTMLResponse("")
+            users = session.exec(select(User).order_by(User.created_at)).all()
+            response = templates.TemplateResponse("users_table.html", {
+                "request": request,
+                "users": users,
+                **auth_context(request),
+            })
             response.headers["HX-Trigger"] = f'{{"closeModal": "", "showToast": {{"message": "User {username} deleted!", "type": "success"}}}}'
             return response
 
