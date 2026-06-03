@@ -277,6 +277,20 @@ async def update_device(
     return RedirectResponse(url="/devices", status_code=303)
 
 
+def _run_background_test(device_id: int):
+    # This runs in a background thread provided by FastAPI
+    from app.database import engine
+    from datetime import datetime, timezone
+    
+    with Session(engine) as session:
+        result = test_device_connection(device_id)
+        device = session.get(Device, device_id)
+        if device:
+            device.last_status = result['status']
+            device.last_status_time = datetime.now(timezone.utc)
+            session.add(device)
+            session.commit()
+
 @router.post("/{device_id}/test", response_class=HTMLResponse)
 async def test_connection(
     device_id: int,
@@ -284,35 +298,47 @@ async def test_connection(
     request: Request,
     session: Session = SessionDep
 ):
-    # Run synchronously for immediate response (with timeout)
-    result = test_device_connection(device_id)
-    status = result['status']
-    message = result['message']
-
-    if status == 'online':
-        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200"><i class="fas fa-circle text-[6px] mr-1.5"></i>Online</span>'
-        toast_type = 'success'
-    elif status == 'auth_error':
-        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200"><i class="fas fa-circle text-[6px] mr-1.5"></i>Auth Error</span>'
-        toast_type = 'error'
-    else:
-        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200"><i class="fas fa-circle text-[6px] mr-1.5"></i>Offline</span>'
-        toast_type = 'error'
-        
     device = session.get(Device, device_id)
-    if device:
-        from datetime import datetime, timezone
-        device.last_status = status
-        device.last_status_time = datetime.now(timezone.utc)
-        session.add(device)
-        session.commit()
+    if not device:
+        return HTMLResponse("Device not found")
+        
+    device.last_status = 'testing'
+    session.add(device)
+    session.commit()
+    
+    background_tasks.add_task(_run_background_test, device_id)
 
     if request.headers.get('HX-Request'):
-        response = HTMLResponse(badge)
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200" hx-get="/devices/{device_id}/status" hx-trigger="every 2s" hx-swap="outerHTML"><i class="fas fa-spinner fa-spin mr-1.5"></i>Testing...</span>'
         import json
-        response.headers['HX-Trigger'] = json.dumps({"showToast": {"message": message, "type": toast_type}})
+        response = HTMLResponse(badge)
+        response.headers['HX-Trigger'] = json.dumps({"showToast": {"message": f"Test connection started for {device.hostname}", "type": "info"}})
         return response
     return RedirectResponse(url='/devices', status_code=303)
+
+
+@router.get("/{device_id}/status", response_class=HTMLResponse)
+def get_device_test_status(device_id: int, session: Session = SessionDep):
+    device = session.get(Device, device_id)
+    if not device:
+        return HTMLResponse("")
+        
+    status = device.last_status
+    if status == 'testing':
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200" hx-get="/devices/{device_id}/status" hx-trigger="every 2s" hx-swap="outerHTML"><i class="fas fa-spinner fa-spin mr-1.5"></i>Testing...</span>'
+    elif status == 'online':
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" title="Last checked: {device.last_status_time}"><i class="fas fa-circle text-[6px] mr-1.5"></i>Online</span>'
+    elif status == 'auth_error':
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200" title="Last checked: {device.last_status_time}"><i class="fas fa-circle text-[6px] mr-1.5"></i>Auth Error</span>'
+    elif status == 'offline':
+        badge = f'<span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200" title="Last checked: {device.last_status_time}"><i class="fas fa-circle text-[6px] mr-1.5"></i>Offline</span>'
+    else:
+        badge = ''
+        
+    # Optional: We could trigger a toast when status transitions from 'testing' to a final status
+    # But since this is a polling endpoint, we might trigger it repeatedly if we're not careful.
+    # The badge color change is clear enough feedback for now.
+    return HTMLResponse(badge)
 
 
 @router.get("/{device_id}/delete/confirm", response_class=HTMLResponse)

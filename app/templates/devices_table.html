@@ -37,7 +37,9 @@
                         <div class="flex flex-col gap-1.5">
                             <span>{{ device.ip_address }}:{{ device.port }}</span>
                             <div id="test-result-{{ device.id }}">
-                                {% if device.last_status == 'online' %}
+                                {% if device.last_status == 'testing' %}
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200" hx-get="/devices/{{ device.id }}/status" hx-trigger="every 2s" hx-swap="outerHTML"><i class="fas fa-spinner fa-spin mr-1.5"></i>Testing...</span>
+                                {% elif device.last_status == 'online' %}
                                 <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" title="Last checked: {{ device.last_status_time }}"><i class="fas fa-circle text-[6px] mr-1.5"></i>Online</span>
                                 {% elif device.last_status == 'auth_error' %}
                                 <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-full bg-amber-50 text-amber-700 border border-amber-200" title="Last checked: {{ device.last_status_time }}"><i class="fas fa-circle text-[6px] mr-1.5"></i>Auth Error</span>
